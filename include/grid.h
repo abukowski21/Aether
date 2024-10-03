@@ -220,7 +220,7 @@ public:
                                                    precision_t Lshell_,
                                                    precision_t min_alt_);
   std::pair<precision_t, precision_t> qp_to_r_theta(precision_t q, precision_t p);
-  void init_dipole_grid(Quadtree quadtree, Planets planet);
+  void init_dipole_grid(Quadtree quadtree_ion, Planets planet);
   arma_vec rNorm1d, lat1dalong;
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);

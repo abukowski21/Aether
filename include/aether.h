@@ -80,6 +80,7 @@ using json = nlohmann::json;
 #include "cubesphere.h"
 #include "sphere.h"
 #include "quadtree.h"
+#include "dipole.h"
 
 // not done
 #include "grid.h"

@@ -39,7 +39,7 @@ std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision
 //   are read from input files. And, of course, the numbers of each coordinate
 // - nLats must be even!!
 // ----------------------------------------------------------------------
-void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
+void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 {
 
   std::string function = "Grid::init_dipole_grid";
@@ -78,9 +78,9 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
 
   // Get some coordinates and sizes in normalized coordinates:
-  arma_vec lower_left_norm = quadtree.get_vect("LL");
-  arma_vec size_right_norm = quadtree.get_vect("SR");
-  arma_vec size_up_norm = quadtree.get_vect("SU");
+  arma_vec lower_left_norm = quadtree_ion.get_vect("LL");
+  arma_vec size_right_norm = quadtree_ion.get_vect("SR");
+  arma_vec size_up_norm = quadtree_ion.get_vect("SU");
 
   // LONGITUDES:
   // - Make a 1d vector

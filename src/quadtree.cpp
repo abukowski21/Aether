@@ -55,9 +55,9 @@ void Quadtree::build(std::string gridtype) {
     IsSphere = true;
   }
   if (grid_input.shape == "dipole") {
-    origins = Sphere::ORIGINS;
-    rights = Sphere::RIGHTS;
-    ups = Sphere::UPS;
+    origins = Dipole::ORIGINS;
+    rights = Dipole::RIGHTS;
+    ups = Dipole::UPS;
     IsSphere = true;
   }
 

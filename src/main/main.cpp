@@ -36,12 +36,13 @@ int main() {
     // neutral grid shape, since this could be sphere (1 root) or
     // cubesphere (6 root)
     Quadtree quadtree(input.get_grid_shape("neuGrid"));
+    Quadtree quadtree_ion(input.get_grid_shape("ionGrid"));
 
     if (!quadtree.is_ok())
       throw std::string("quadtree initialization failed!");
 
     // Initialize MPI and parallel aspects of the code:
-    didWork = init_parallel(quadtree);
+    didWork = init_parallel(quadtree, quadtree_ion);
 
     if (!didWork)
       throw std::string("init_parallel failed!");
@@ -98,7 +99,7 @@ int main() {
 
     if (mGrid.iGridShape_ == mGrid.iDipole_) {
       mGrid.set_IsDipole(true);
-      mGrid.init_dipole_grid(quadtree, planet);
+      mGrid.init_dipole_grid(quadtree_ion, planet);
       mGrid.set_IsGeoGrid(false);
     } else {
       std::cout << "Making Spherical Magnetic Grid\n";
