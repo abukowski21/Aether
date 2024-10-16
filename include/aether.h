@@ -84,6 +84,7 @@ using json = nlohmann::json;
 
 // not done
 #include "grid.h"
+#include "init_mag_grid.h"
 
 // Contains the neutral states and derived quantities
 #include "neutrals.h"

@@ -207,21 +207,13 @@ public:
   void calc_cent_acc(Planets planet);
 
   // Make mag-field grid:
-  std::pair<precision_t, precision_t> lshell_to_qn_qs(Planets planet,
-                                                      precision_t Lshell,
-                                                      precision_t Lon,
-                                                      precision_t AltMin);
   void convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3],
                               precision_t XyzGeo[3]);
-  std::pair<arma_vec, arma_vec> fill_dipole_q_line(precision_t qN_,
-                                                   precision_t qS_,
-                                                   precision_t Gamma_,
-                                                   int64_t nZ_,
-                                                   precision_t Lshell_,
-                                                   precision_t min_alt_);
-  std::pair<precision_t, precision_t> qp_to_r_theta(precision_t q, precision_t p);
+
+
   void init_dipole_grid(Quadtree quadtree_ion, Planets planet);
   arma_vec rNorm1d, lat1dalong;
+  
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);
 
