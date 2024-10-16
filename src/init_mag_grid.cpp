@@ -185,10 +185,12 @@ std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
 //   are read from input files. And, of course, the numbers of each coordinate
 // - nLats must be even!!
 // ----------------------------------------------------------------------
-void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
+bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 {
 
   using namespace std;
+  bool DidWork = true;
+
 
   string function = "Grid::init_dipole_grid";
   static int iFunction = -1;
@@ -222,10 +224,17 @@ void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // Altitude to begin modeling, normalized to planet radius
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
 
-  if (LatStretch /= 1.0)
+  if (LatStretch != 1){
     report.error("LatStretch values =/= 1 are not yet supported!");
-  if (nAlts % 2 != 0)
-    report.exit("nAlts must be even!");
+    DidWork=false;}
+
+  if (nAlts % 2 != 0){
+    report.error("nAlts must be even!");
+    DidWork=false;}
+
+  if (min_alt >= min_apex){
+    report.error("min_apex must be more than min_alt");
+    DidWork=false;}
 
   // Get some coordinates and sizes in normalized coordinates:
   arma_vec lower_left_norm = quadtree_ion.get_vect("LL"); // origin
@@ -361,5 +370,5 @@ void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   report.print(4, "Done filling dipole grid with b-field!");
 
   report.exit(function);
-  return;
+  return DidWork;
 }

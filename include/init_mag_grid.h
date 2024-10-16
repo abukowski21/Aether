@@ -9,7 +9,7 @@
 #include "planets.h"
 #include "grid.h"
 
-bool init_mag_grid(Grid &mGrid, Planets planet);
+bool init_dipole_grid(Grid &mGrid, Planets planet);
 
 
 // Take limits & specs of field line, fill it with points.

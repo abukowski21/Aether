@@ -502,10 +502,6 @@ Inputs::grid_input_struct Inputs::get_grid_inputs(std::string gridtype)
     // Latitude range (base of field line) is specified with max lat & min apex.
     grid_specs.max_blat = check_settings_pt(gridtype, "LatMax") * cDtoR;
     grid_specs.min_apex = check_settings_pt(gridtype, "MinApex");
-    if (grid_specs.min_apex <= grid_specs.alt_min)
-    { // min_apex MUST be more than min_alt:
-      report.exit("Dipole grid min_apex must be more than min_alt!");
-    }
     grid_specs.LatStretch = check_settings_pt(gridtype, "LatStretch");
     grid_specs.FieldLineStretch = check_settings_pt(gridtype, "LineSpacing");
   }

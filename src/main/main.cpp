@@ -98,10 +98,11 @@ int main() {
     Grid mGrid("ionGrid");
 
     if (mGrid.iGridShape_ == mGrid.iDipole_) {
-      mGrid.set_IsDipole(true);
-      mGrid.init_dipole_grid(quadtree_ion, planet);
-      mGrid.set_IsGeoGrid(false);
-    } else {
+      didWork = mGrid.init_dipole_grid(quadtree_ion, planet);
+      if (!didWork)
+        throw std::string("init_dipole_grid failed!");
+    } 
+    else {
       std::cout << "Making Spherical Magnetic Grid\n";
       mGrid.set_IsDipole(false);
       didWork = mGrid.init_geo_grid(quadtree, planet);

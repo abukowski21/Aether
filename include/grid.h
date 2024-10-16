@@ -211,8 +211,7 @@ public:
                               precision_t XyzGeo[3]);
 
 
-  void init_dipole_grid(Quadtree quadtree_ion, Planets planet);
-  arma_vec rNorm1d, lat1dalong;
+  bool init_dipole_grid(Quadtree quadtree_ion, Planets planet);
   
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);
