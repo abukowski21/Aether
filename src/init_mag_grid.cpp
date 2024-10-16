@@ -2,9 +2,8 @@
 // Full license can be found in License.md
 
 #include <iostream>
-#include <fstream>
 
-#include "../include/aether.h"
+#include "aether.h"
 
 // ----------------------------------------------------------------------
 // Routine to convert p and q to r and theta. Can be solved iteratively,
@@ -12,7 +11,7 @@
 //  https://arxiv.org/pdf/physics/0606044
 //
 // ----------------------------------------------------------------------
-std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision_t p)
+std::pair<precision_t, precision_t> qp_to_r_theta(precision_t q, precision_t p)
 {
   // return quanties
   precision_t r, theta;
@@ -33,6 +32,153 @@ std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision
   return {r, theta};
 }
 
+arma_vec baselat_spacing(precision_t extent,
+                         precision_t origin,
+                         precision_t upper_lim,
+                         precision_t lower_lim,
+                         int16_t nLats,
+                         precision_t spacing_factor)
+{
+  std::string function = "Grid::baselat_spacing";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
+  report.print(3, "baselates enter!");
+
+  // intermediate latitude values
+  precision_t lat_low, lat_high, lat_low0, lat_high0;
+  // intermediate calculation values
+  precision_t dlat, bb, aa, ang0, angq;
+
+  // Now we can allocate the return array,
+  arma_vec Lats(nLats);
+
+  // Noting the special case of 1 root node & 1 processor...
+  bool DO_FLIPBACK = false;
+  if (extent > 0.5)
+  {
+    DO_FLIPBACK = true;
+    nLats = nLats / 2;
+    extent = 0.5;
+  }
+
+  // get the upper & lower latitude bounds for our division of the quadree
+  if (origin < 0)
+  {
+    // negative origin: lat_high = lat_low & vice-versa.
+    lat_low, lat_high = -lat_high, -lat_low;
+    lat_low0 = lat_low;
+    lat_low = lat_low - (lat_high - lat_low) * (origin / 0.5);
+    lat_high = lat_low0 - (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
+  }
+  else
+  {
+    lat_low0 = lat_low;
+    lat_low = lat_low + (lat_high - lat_low) * (origin / 0.5);
+    lat_high = lat_low0 + (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
+  }
+
+  // normalized spacing in latitude
+  // NOTE: spacing factor != 1 will not work yet. but framework is here...
+  bb = (lat_high - lat_low) / (pow(lat_high, spacing_factor) - pow(lat_low, spacing_factor));
+  aa = lat_high - bb * pow(lat_high, spacing_factor);
+  dlat = (lat_high - lat_low) / (nLats);
+  report.print(3, "baselates laydown!");
+
+  for (int64_t j = 0; j < nLats; j++)
+  {
+    ang0 = lat_low + (j + 1) * dlat;
+    angq = aa + bb * pow(ang0, spacing_factor);
+    Lats[j] = angq;
+  }
+  report.print(3, "baselates flipback!");
+
+  if (DO_FLIPBACK)
+    for (int64_t j = 0; j < nLats; j++)
+    {
+      Lats[j + nLats] = -1 * Lats[j];
+    }
+  report.print(3, "baselates flipbackdone!");
+
+  report.exit(function);
+  return Lats;
+}
+
+// === SPACING ALONG FIELD LINE === //
+// Coordinates along the field line to begin modeling
+// - In dipole (p,q) coordinates
+// - North & south hemisphere base
+  
+std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
+                                                  int64_t nAlts,
+                                                  precision_t min_altRe,
+                                                  precision_t Gamma)
+{
+
+  std::string function = "Grid::fill_field_lines";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
+
+  report.print(3, "entered!");
+
+
+  int64_t nLats = baseLats.n_elem;
+
+  precision_t q_S, q_N, delqp;
+  arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
+
+  // allocate & calculate some things outside of the main loop
+  // - mostly just factors to make the code easier to read
+  precision_t qp0, fb0, ft, delq, qp2, fa, fb, term0, term1, term2, term3, new_r;
+  // exp_q_dist is the fraction of total q-distance to step for each pt along field line
+  arma_vec exp_q_dist(nAlts);
+  
+  // temp holding of results from q,p -> r,theta conversion:
+  std:: pair<precision_t, precision_t> r_theta;
+
+  // Find L-Shell for each baseLat
+  // using L=R/sin2(theta), where theta is from north pole
+  arma_vec Lshells(nLats);
+  for (int64_t iLat = 0; iLat < nLats; iLat++)
+    Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLats(iLat)), 2.0);
+  report.print(3, "lshells!");
+
+
+  int64_t nZby2 = nAlts / 2;
+
+  for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
+    exp_q_dist(iAlt) = Gamma + (1 - Gamma) * exp(-pow(((iAlt - nZby2) / (nAlts / 10.0)), 2.0));
+
+  for (int iLat = 0; iLat < nLats; iLat++)
+  {
+    q_S = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
+    q_N = -q_S;
+
+    // calculate const. stride similar to sami2/3 (huba & joyce 2000)
+    // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
+    for (int iAlt = 0; iAlt < nAlts; iAlt++)
+    {
+      // Doesn't have any lat/lon dependence so won't work for offset dipoles
+      delqp = (q_N - q_S) / (nAlts + 1);
+      qp0 = q_S + iAlt * (delqp);
+      delqp = min_altRe * delqp;
+      fb0 = (1 - exp_q_dist(iAlt)) / exp(-q_S / delqp - 1);
+      ft = exp_q_dist(iAlt) - fb0 + fb0 * exp(-(qp0 - q_S) / delqp);
+      delq = qp0 - q_S;
+
+      // Q value at this point:
+      qp2 = q_S + ft * delq;
+
+      r_theta = qp_to_r_theta(qp2, Lshells(iLat));
+      bAlts(iLat, iAlt) = r_theta.first;
+      bLats(iLat, iAlt) = r_theta.second;
+    }
+  }
+
+  report.exit(function);
+  return std::make_tuple(bLats, bAlts);
+}
+
+
 // ----------------------------------------------------------------------
 // Initialize the dipole grid.
 // - inputs (min_apex, min_alt, LatStretch, FieldLineStretch, max_lat_dipole)
@@ -42,7 +188,9 @@ std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision
 void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 {
 
-  std::string function = "Grid::init_dipole_grid";
+  using namespace std;
+
+  string function = "Grid::init_dipole_grid";
   static int iFunction = -1;
   report.enter(function, iFunction);
 
@@ -62,37 +210,40 @@ void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // Number of ghost cells:
   int64_t nGCs = get_nGCs();
 
-  // Get inputs
-  report.print(3, "Setting inputs in dipole grid");
-  precision_t min_apex = grid_input.min_apex * cKMtoM;
+  // Get inputs:
   precision_t min_alt = grid_input.alt_min * cKMtoM;
   precision_t LatStretch = grid_input.LatStretch;
   precision_t Gamma = grid_input.FieldLineStretch;
-  precision_t max_lat = grid_input.max_lat_dipole;
+  precision_t min_apex = grid_input.min_apex * cKMtoM;
+  precision_t max_lat = grid_input.max_blat;
 
-  // Normalize to planet radius...
+  // Normalize inputs to planet radius...
   precision_t planetRadius = planet.get_radius(0.0);
-  // L-Shell of minimum field line, normalized to planet radius
-  precision_t min_lshell = (min_apex + planetRadius) / planetRadius;
   // Altitude to begin modeling, normalized to planet radius
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
 
-  // Get some coordinates and sizes in normalized coordinates:
-  arma_vec lower_left_norm = quadtree_ion.get_vect("LL");
-  arma_vec size_right_norm = quadtree_ion.get_vect("SR");
-  arma_vec size_up_norm = quadtree_ion.get_vect("SU");
+  if (LatStretch /= 1.0)
+    report.error("LatStretch values =/= 1 are not yet supported!");
+  if (nAlts % 2 != 0)
+    report.exit("nAlts must be even!");
 
-  // LONGITUDES:
-  // - Make a 1d vector
-  // - copy it into the 3d cube
+  // Get some coordinates and sizes in normalized coordinates:
+  arma_vec lower_left_norm = quadtree_ion.get_vect("LL"); // origin
+  arma_vec size_right_norm = quadtree_ion.get_vect("SR"); // lon_lims
+  arma_vec size_up_norm = quadtree_ion.get_vect("SU");    //[1] = lat_lims
+  report.print(3, "longitudes");
+
   precision_t dlon = size_right_norm(0) * cPI / (nLons - 2 * nGCs);
   precision_t lon0 = lower_left_norm(0) * cPI;
   arma_vec lon1d(nLons);
+  // if we are not doing anything in the lon direction, then set dlon to
+  // something reasonable:
+  if (!HasXdim)
+    dlon = 1.0 * cDtoR;
 
-  // Quick 1D check for longitudes:
-  // Same as geo_grid here...
-  if (!HasXdim) dlon = 1.0 * cDtoR;
-
+  // Longitudes:
+  // - Make a 1d vector
+  // - copy it into the 3d cube
   for (iLon = 0; iLon < nLons; iLon++)
     lon1d(iLon) = lon0 + (iLon - nGCs + 0.5) * dlon;
 
@@ -101,134 +252,41 @@ void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
     for (iAlt = 0; iAlt < nAlts; iAlt++)
       magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
   }
+  report.print(3, "longitudes point two");
 
-  geoLon_scgc = magLon_scgc;
+  // Latitudes:
 
-  // LATITUDES:
+  precision_t min_lat = acos(sqrt(1 / min_alt_re));
 
-  // min_latitude calculated from min_lshell (min_apex input)
-  precision_t min_lat = get_lat_from_r_and_lshell(1.0, min_lshell);
+  // latitude of field line base:
+  // todo: needs support for variable stretching. it's like, halfway there.
+  arma_vec baseLats = baselat_spacing(size_up_norm[1], lower_left_norm[1],
+                                      max_lat, min_lat, nLats, 1.0);
 
-  // Lay down baseLat spacing according to an exponential factor.
-  // some intermediates:
-  precision_t del_lat, blat_min_, blat_max_, tmp_lat;
-  // Integers for field-line loops:
-  // - nF=nLats/2 (so nLats MUST be even)
-  // - nZ=nAlts*2 - (we fill up HALF field lines)
-  // - nZby2 = nAlts
-  // -> Plus, experinemtal support for altitude ghost cells...
-  int64_t nF = (nLats) / 2 , nZ = (nAlts) * 2, nZby2 = (nAlts);
-  // lShells and baseLats are currently set for southern hemisphere then mirrored
-  arma_vec Lshells(nF), baseLats(nF);
+  report.print(3, "baselates done!");
 
-  blat_min_ = cos(pow(min_lat, 1.0 / LatStretch));
-  blat_max_ = cos(pow(max_lat, 1.0 / LatStretch));
-  del_lat = (blat_max_ - blat_min_) / (nF - nGCs * 2.0);
-
-  // now make sure the user used 1 or an even number for nLats
-  if (nLats % 2 != 0)
-  {
-    if (!HasYdim) 
-    {
-      del_lat = 1.0 * cDtoR;
-      report.print(0, "Running in single latitude dimension. Experinental!!");
-      nF = 1;
-    }
-    else
-      report.error("Cannot use odd nLats with dipole grid!");
-  }
-
-  // loop over all cells - everything including the ghost cells
-  // -> This means some points will go over the pole (baseLat > +- 90 degrees)
-  //    They're taken care of in the conversion to geographic coordinates.
-  for (int i = 0; i < nF; i++)
-  {
-    // first put down "linear" spacing
-    tmp_lat = blat_min_ + del_lat * (i - nGCs + 0.5);
-    // then scale it according to the exponent & acos
-    tmp_lat = pow(acos(tmp_lat), LatStretch);
-    // place values in array backwards, South pole -> equator.
-    baseLats(nF - i - 1) = -tmp_lat;
-  }
-  report.print(3, "Done setting base latitudes for dipole grid.");
-
-  // Find L-Shell for each baseLat
-  // using L=R/sin2(theta), where theta is from north pole
-  for (int i = 0; i < nF; i++)
-    Lshells(i) = (min_alt_re) / pow(sin(cPI / 2 - baseLats(i)), 2.0);
-
-  // SPACING ALONG FIELD LINE //
-  // Coordinates along the field line to begin modeling
-  // - In dipole (p,q) coordinates
-  // - North & south hemisphere base
-  precision_t q_S, q_N;
-  // constant stride, scaled later
-  precision_t delqp;
-
-  // allocate & calculate some things outside of the main loop
-  // - mistly just factors to make the code easier to read
-  precision_t qp0, fb0, ft, delq, qp2, fa, fb, term0, term1, term2, term3, new_r;
-  // exp_q_dist is the fraction of total q distance to step for each pt along field line
-  arma_vec exp_q_dist(nZ), q_vals(nZ);
-  // stored mag. coords temporarily in bAlts and bLats.
-  arma_mat bAlts(nF, nZ), bLats(nF, nZ);
-
-  // temp holding of results from q,p -> r,theta conversion:
-  std::pair<precision_t, precision_t> r_theta;
-
-  for (int i = 0; i < nAlts; i++)
-    exp_q_dist(i) = Gamma + (1 - Gamma) * exp(-pow(((i - nZby2) / (nZ / 10.0)), 2.0));
-
-  for (int i_nF = 0; i_nF < nF; i_nF++)
-  {
-    // min/max q
-    q_S = -cos(cPI / 2 + baseLats(i_nF)) / pow(min_alt_re, 2.0);
-    q_N = -q_S;
-
-    // calculate const. stride similar to sami2/3 (huba & joyce 2000)
-    // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
-    // inlo loop thru southern hemisphere, mirror in  north.
-    for (int i_nZ = 0; i_nZ < nAlts; i_nZ++)
-    {
-      // This won't work for offset dipoles.
-      // Doesn't have any lat/lon dependence.
-      delqp = (q_N - q_S) / (nZ + 1);
-      qp0 = q_S + i_nZ * (delqp);
-      delqp = min_alt_re * delqp;
-      fb0 = (1 - exp_q_dist(i_nZ)) / exp(-q_S / delqp - 1);
-      ft = exp_q_dist(i_nZ) - fb0 + fb0 * exp(-(qp0 - q_S) / delqp);
-      delq = qp0 - q_S;
-
-      // Q value at this point:
-      qp2 = q_S + ft * delq;
-
-      r_theta = qp_to_r_theta(qp2, Lshells(i_nF));
-      bAlts(i_nF, i_nZ) = r_theta.first;
-      bLats(i_nF, i_nZ) = r_theta.second;
-    }
-  }
-  report.print(3, "Done generating q-spacing for dipole grid.");
-
+  // Fill field lines!
+  arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
+  std::tie(bLats, bAlts) = fill_field_lines(baseLats, nAlts, min_alt_re, Gamma);
+  
   arma_vec rNorm1d(nAlts), lat1dAlong(nAlts);
   arma_cube r3d(nLons, nLats, nAlts);
 
   // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
 
-  for (iLat = 0; iLat < nLats / 2; iLat++)
+  for (int64_t iLat = 0; iLat < nLats / 2; iLat++)
   {
-    for (iLon = 0; iLon < nLons; iLon++)
+    for (int64_t iLon = 0; iLon < nLons; iLon++)
     {
       // Not currently used. Dipole isn't offset. Leaving just in case.
       // Lon = magPhi_scgc(iLon, iLat, 1);
 
-      for (iAlt = 0; iAlt < nAlts; iAlt++)
+      for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
       {
         lat1dAlong(iAlt) = bLats(iLat, iAlt);
         rNorm1d(iAlt) = bAlts(iLat, iAlt);
       }
       r3d.tube(iLon, iLat) = rNorm1d * planetRadius;
-      r3d.tube(iLon, nLats - iLat - 1) = rNorm1d * planetRadius;
-      magLat_scgc.tube(iLon, iLat) = lat1dAlong;
       magLat_scgc.tube(iLon, nLats - iLat - 1) = -lat1dAlong;
     }
   }
@@ -274,7 +332,7 @@ void Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 
   report.print(4, "Done gravity calculations for the dipole grid.");
 
-  std::vector<arma_cube> llr, xyz, xyzRot1, xyzRot2;
+  vector<arma_cube> llr, xyz, xyzRot1, xyzRot2;
   llr.push_back(magLon_scgc);
   llr.push_back(magLat_scgc);
   llr.push_back(r3d);

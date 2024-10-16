@@ -49,7 +49,7 @@ Grid::Grid(std::string gridtype) {
     iGridShape_ = iSphere_;
   if (mklower(grid_input.shape) == "cubesphere") 
     iGridShape_ = iCubesphere_;
-  if (mklower(grid_input.shape) == "dipole") 
+  if (grid_input.shape.find("dipole") != std::string::npos)
     iGridShape_ = iDipole_;
 
   geoLon_scgc.set_size(nX, nY, nZ);

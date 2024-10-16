@@ -18,6 +18,8 @@ int64_t iProcQuery = -1;
 Quadtree::Quadtree(std::string shape) {
   if (shape == "cubesphere")
     nRootNodes = 6;
+  if (shape == "dipole2")
+    nRootNodes = 2;
   else
     nRootNodes = 1;
 }
@@ -58,6 +60,12 @@ void Quadtree::build(std::string gridtype) {
     origins = Dipole::ORIGINS;
     rights = Dipole::RIGHTS;
     ups = Dipole::UPS;
+    IsSphere = true;
+  }
+  if (grid_input.shape == "dipole2") {
+    origins = Dipole2::ORIGINS;
+    rights = Dipole2::RIGHTS;
+    ups = Dipole2::UPS;
     IsSphere = true;
   }
 
