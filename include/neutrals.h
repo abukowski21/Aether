@@ -518,7 +518,6 @@ class Neutrals {
      \param grid The grid to define the neutrals on
      \param time contains information about the current time
    **/
-
   void solver_vertical_rusanov(Grid grid,
 			       Times time);
   
@@ -527,16 +526,28 @@ class Neutrals {
      \param grid The grid to define the neutrals on
      \param time contains information about the current time
    **/
-
   bool advect_vertical(Grid grid, Times time);
 
+  /**********************************************************************
+     \brief Calculate the neutral friction in one cell using an implicit solver
+     \param iLong the longitude index
+     \param iLat the lat index
+     \param iAlt the altitude index
+     \param dt time step
+     \param vels updated velocity, which acts as a source term for the implicit solve
+   **/
   arma_vec calc_friction_one_cell(int64_t iLong, int64_t iLat, int64_t iAlt,
 				   precision_t dt, arma_vec &vels);
 
-  arma_vec calc_friction_one_cell_v2(int64_t iLon, int64_t iLat, int64_t iAlt,
-                                     arma_vec &vels);
+  /**********************************************************************
+     \brief Calculate the neutral friction in all cells (calls one_cell above)
+     \param dt time step
+   **/
+  void calc_neutral_friction_implicit(precision_t dt);  
 
-  void calc_neutral_friction(precision_t dt);  
+  /**********************************************************************
+     \brief Calculate the neutral friction coefficients for semi-implicit solver
+   **/
   void calc_neutral_friction_coefs();    
 };
 
