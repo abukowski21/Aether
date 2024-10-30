@@ -282,7 +282,7 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
   // calculate vertical momentum due to eddy diffusion:
   vertical_momentum_eddy(grid);
 
-  bool useImplicitFriction = true;
+  bool useImplicitFriction = input.get_advection_neutrals_implicitfriction();
 
   if (useImplicitFriction) {
     calc_neutral_friction_coefs();
@@ -338,7 +338,7 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
     }
   }
   if (!useImplicitFriction)
-    calc_neutral_friction(dt);
+    calc_neutral_friction_implicit(dt);
 
   newTemperature_scgc =
     temperature_scgc
