@@ -1283,6 +1283,9 @@ bool Inputs::get_advection_neutrals_bulkwinds() {
   return get_setting_bool("Advection", "Neutrals", "useBulkWinds");
 }
 
+bool Inputs::get_advection_neutrals_implicitfriction() {
+  return get_setting_bool("Advection", "Neutrals", "useImplicitFriction");
+}
 
 // --------------------------------------------------------------------------
 // check to see if class is ok
