@@ -24,10 +24,11 @@
 	"Neutrals" : {
 	    "Vertical" : "rusanov",
 	    "Horizontal" : "default",
-		"useBulkWinds" : true},
+	    "useBulkWinds" : true,
+	    "useImplicitFriction" : true},
 	"Ions" : {
-	"Along" : "rusanov",
-	"Across" : "default"} },
+	    "Along" : "rusanov",
+	    "Across" : "default"} },
     
     "Student" : {
 	"name" : "",
