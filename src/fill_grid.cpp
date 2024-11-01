@@ -302,7 +302,6 @@ void Grid::calc_gravity(Planets planet) {
 // -----------------------------------------------------------------------------
 
 void Grid::calc_grid_spacing(Planets planet) {
-
   int64_t iLon, iLat, iAlt;
 
   report.print(3, "starting calc_grid_spacing");
@@ -315,8 +314,8 @@ void Grid::calc_grid_spacing(Planets planet) {
   lon_lat_radius.push_back(geoLon_scgc);
   lon_lat_radius.push_back(geoLat_scgc);
   lon_lat_radius.push_back(radius_scgc);
-  std::vector<arma_cube> xyz;
 
+  std::vector<arma_cube> xyz;
   xyz = transform_llr_to_xyz_3d(lon_lat_radius);
   geoX_scgc = xyz[0];
   geoY_scgc = xyz[0];
@@ -332,6 +331,8 @@ void Grid::calc_grid_spacing(Planets planet) {
 void Grid::calc_alt_grid_spacing() {
 
   int64_t iAlt;
+
+  report.print(4, "starting calc_alt_grid_spacing");
 
   for (iAlt = 1; iAlt < nAlts - 1; iAlt++) {
     dalt_center_scgc.slice(iAlt) =
@@ -366,29 +367,32 @@ void Grid::calc_alt_grid_spacing() {
 
   arma_mat h1, h2, h3, h4, MeshH1, MeshH2, MeshH3, MeshH4;
 
-  for (iAlt = 0; iAlt < nGCs; iAlt++) {
-    h1 = dalt_lower_scgc.slice(iAlt + 2);
-    h2 = dalt_lower_scgc.slice(iAlt + 3);
-    h3 = dalt_lower_scgc.slice(iAlt + 4);
-    h4 = dalt_lower_scgc.slice(iAlt + 5);
-    MeshH1 = h1;
-    MeshH2 = h1 + h2;
-    MeshH3 = h1 + h2 + h3;
-    MeshH4 = h1 + h2 + h3 + h4;
-    MeshCoef1s3rdp1.slice(iAlt) = 
+  if (HasZdim & nAlts > nGCs + 5) {
+    for (iAlt = 0; iAlt < nGCs; iAlt++) {
+      h1 = dalt_lower_scgc.slice(iAlt + 2);
+      h2 = dalt_lower_scgc.slice(iAlt + 3);
+      h3 = dalt_lower_scgc.slice(iAlt + 4);
+      h4 = dalt_lower_scgc.slice(iAlt + 5);
+      MeshH1 = h1;
+      MeshH2 = h1 + h2;
+      MeshH3 = h1 + h2 + h3;
+      MeshH4 = h1 + h2 + h3 + h4;
+      MeshCoef1s3rdp1.slice(iAlt) = 
         -1.0*( MeshH2 % MeshH3 % MeshH4 + MeshH1 % MeshH3 % MeshH4 + 
                MeshH1 % MeshH2 % MeshH4 + MeshH1 % MeshH2 % MeshH3)/
               (MeshH1 % MeshH2 % MeshH3 % MeshH4);
-    MeshCoef1s3rdp2.slice(iAlt) =  
+      MeshCoef1s3rdp2.slice(iAlt) =  
         1.0*( MeshH2 % MeshH3 % MeshH4)/(h1 % h2 % (h2 + h3) % (h2 + h3 + h4));
-    MeshCoef1s3rdp3.slice(iAlt) = 
+      MeshCoef1s3rdp3.slice(iAlt) = 
         -1.0*( MeshH1 % MeshH3 % MeshH4)/(MeshH2 % h2 % h3 % (h3+h4));
-    MeshCoef1s3rdp4.slice(iAlt) =  
+      MeshCoef1s3rdp4.slice(iAlt) =  
         1.0*( MeshH1 % MeshH2 % MeshH4)/(MeshH3 % (h3+h2) % h3 % h4);
-    MeshCoef1s3rdp5.slice(iAlt) = 
+      MeshCoef1s3rdp5.slice(iAlt) = 
         -1.0*( MeshH1 % MeshH2 % MeshH3)/(MeshH4 % (h2+h3+h4) % (h3+h4) % h4);
+    }
   }
-
+  report.print(4, "ending calc_alt_grid_spacing");
+  return;
 }
 
 // ---------------------------------------
@@ -398,6 +402,8 @@ void Grid::calc_alt_grid_spacing() {
 void Grid::calc_lat_grid_spacing() {
 
   int64_t iLat;
+
+  report.print(4, "starting calc_lat_grid_spacing");
 
   for (iLat = 1; iLat < nLats - 1; iLat++) {
     dlat_center_scgc.col(iLat) =
@@ -415,6 +421,7 @@ void Grid::calc_lat_grid_spacing() {
 
   // Make this into a distance:
   dlat_center_dist_scgc = dlat_center_scgc % radius_scgc;
+  report.print(4, "ending calc_lat_grid_spacing");
 }
 
 // ---------------------------------------
@@ -424,6 +431,8 @@ void Grid::calc_lat_grid_spacing() {
 void Grid::calc_long_grid_spacing() {
 
   int64_t iLon;
+
+  report.print(4, "starting calc_long_grid_spacing");
 
   for (iLon = 1; iLon < nLons - 1; iLon++)
     dlon_center_scgc.row(iLon) =
@@ -441,6 +450,9 @@ void Grid::calc_long_grid_spacing() {
   // Make this into a distance:
   dlon_center_dist_scgc =
     dlon_center_scgc % radius_scgc % abs(cos(geoLat_scgc));
+
+  report.print(4, "ending calc_long_grid_spacing");
+
 }
 
 // -----------------------------------------------------------------------------
