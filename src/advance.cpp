@@ -95,7 +95,7 @@ bool advance(Planets &planet,
     neutrals.advect_vertical(gGrid, time);
 
   neutrals.exchange_old(gGrid);
-  //advect(gGrid, time, neutrals);
+  advect(gGrid, time, neutrals);
 
   if (didWork & input.get_check_for_nans())
     didWork = neutrals.check_for_nonfinites("After Horizontal Advection");
