@@ -194,8 +194,7 @@ void calc_aurora(Grid grid,
     IsFirstTime = false;
   }
 
-  if (report.test_verbose(4))
-    std::cout << "aurora - done with init!\n";
+  report.print(4, "aurora - done with init!");
 
   arma_vec rhoH1d;
   arma_cube scale_height;
