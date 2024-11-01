@@ -30,26 +30,46 @@ Grid::Grid(std::string gridtype) {
       grid_input.nZ == 1)
     Is0D = true;
   else {
-    if (grid_input.nY == 1 & grid_input.nZ == 1) Is1Dx = true;
-    if (grid_input.nX == 1 & grid_input.nZ == 1) Is1Dy = true;
-    if (grid_input.nX == 1 & grid_input.nY == 1) Is1Dz = true;
+    if (grid_input.nY == 1 & grid_input.nZ == 1)
+      Is1Dx = true;
+
+    if (grid_input.nX == 1 & grid_input.nZ == 1)
+      Is1Dy = true;
+
+    if (grid_input.nX == 1 & grid_input.nY == 1)
+      Is1Dz = true;
+
     if (!Is1Dx & !Is1Dy & !Is1Dz) {
-      if (grid_input.nX == 1) Is2Dyz = true;
-      if (grid_input.nY == 1) Is2Dxz = true;
-      if (grid_input.nZ == 1) Is2Dxy = true;
-      if (!Is2Dyz & !Is2Dxz & !Is2Dxy) Is3D = true;
+      if (grid_input.nX == 1)
+        Is2Dyz = true;
+
+      if (grid_input.nY == 1)
+        Is2Dxz = true;
+
+      if (grid_input.nZ == 1)
+        Is2Dxy = true;
+
+      if (!Is2Dyz & !Is2Dxz & !Is2Dxy)
+        Is3D = true;
     }
   }
 
-  if (grid_input.nX == 1) HasXdim = false;
-  if (grid_input.nY == 1) HasYdim = false;
-  if (grid_input.nZ == 1) HasZdim = false;
+  if (grid_input.nX == 1)
+    HasXdim = false;
 
-  if (mklower(grid_input.shape) == "sphere") 
+  if (grid_input.nY == 1)
+    HasYdim = false;
+
+  if (grid_input.nZ == 1)
+    HasZdim = false;
+
+  if (mklower(grid_input.shape) == "sphere")
     iGridShape_ = iSphere_;
-  if (mklower(grid_input.shape) == "cubesphere") 
+
+  if (mklower(grid_input.shape) == "cubesphere")
     iGridShape_ = iCubesphere_;
-  if (mklower(grid_input.shape) == "dipole") 
+
+  if (mklower(grid_input.shape) == "dipole")
     iGridShape_ = iDipole_;
 
   geoLon_scgc.set_size(nX, nY, nZ);
@@ -192,6 +212,7 @@ Grid::Grid(std::string gridtype) {
   IsExperimental = false;
 
   cent_acc_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
+
   for (int i = 0; i < 3; i++)
     cent_acc_vcgc[i].zeros();
 
@@ -406,7 +427,7 @@ void Grid::set_IsGeoGrid(bool value) {
 }
 
 // --------------------------------------------------------------------------
-// Set whether the grid is an experimental grid 
+// Set whether the grid is an experimental grid
 // --------------------------------------------------------------------------
 
 void Grid::set_IsExperimental(bool value) {
@@ -414,7 +435,7 @@ void Grid::set_IsExperimental(bool value) {
 }
 
 // --------------------------------------------------------------------------
-// Set whether the grid is a dipole grid 
+// Set whether the grid is a dipole grid
 // --------------------------------------------------------------------------
 
 void Grid::set_IsDipole(bool value) {
@@ -481,19 +502,19 @@ int64_t Grid::get_nX(bool includeGCs) {
   if (includeGCs)
     return nX;
   else
-    return nX - 2*nGCs;
+    return nX - 2 * nGCs;
 }
 int64_t Grid::get_nY(bool includeGCs) {
   if (includeGCs)
     return nY;
   else
-    return nY - 2*nGCs;
+    return nY - 2 * nGCs;
 }
 int64_t Grid::get_nZ(bool includeGCs) {
   if (includeGCs)
     return nZ;
   else
-    return nZ - 2*nGCs;
+    return nZ - 2 * nGCs;
 }
 
 int64_t Grid::get_nLons() {
@@ -510,19 +531,19 @@ int64_t Grid::get_nLons(bool includeGCs) {
   if (includeGCs)
     return nLons;
   else
-    return nLons - 2*nGCs;
+    return nLons - 2 * nGCs;
 }
 int64_t Grid::get_nLats(bool includeGCs) {
   if (includeGCs)
     return nLats;
   else
-    return nLats - 2*nGCs;
+    return nLats - 2 * nGCs;
 }
 int64_t Grid::get_nAlts(bool includeGCs) {
   if (includeGCs)
     return nAlts;
   else
-    return nAlts - 2*nGCs;
+    return nAlts - 2 * nGCs;
 }
 
 int64_t Grid::get_nGCs() {

@@ -289,9 +289,9 @@ void Grid::calc_gravity(Planets planet) {
   gravity_vcgc[1] = - gravity_vcgc[1];
   gravity_vcgc[2] = - gravity_vcgc[2];
   gravity_mag_scgc = sqrt(
-    gravity_vcgc[0] % gravity_vcgc[0] + 
-    gravity_vcgc[1] % gravity_vcgc[1] + 
-    gravity_vcgc[2] % gravity_vcgc[2]);
+                       gravity_vcgc[0] % gravity_vcgc[0] +
+                       gravity_vcgc[1] % gravity_vcgc[1] +
+                       gravity_vcgc[2] % gravity_vcgc[2]);
 
   report.exit(function);
   return;
@@ -377,20 +377,21 @@ void Grid::calc_alt_grid_spacing() {
       MeshH2 = h1 + h2;
       MeshH3 = h1 + h2 + h3;
       MeshH4 = h1 + h2 + h3 + h4;
-      MeshCoef1s3rdp1.slice(iAlt) = 
-        -1.0*( MeshH2 % MeshH3 % MeshH4 + MeshH1 % MeshH3 % MeshH4 + 
-               MeshH1 % MeshH2 % MeshH4 + MeshH1 % MeshH2 % MeshH3)/
-              (MeshH1 % MeshH2 % MeshH3 % MeshH4);
-      MeshCoef1s3rdp2.slice(iAlt) =  
-        1.0*( MeshH2 % MeshH3 % MeshH4)/(h1 % h2 % (h2 + h3) % (h2 + h3 + h4));
-      MeshCoef1s3rdp3.slice(iAlt) = 
-        -1.0*( MeshH1 % MeshH3 % MeshH4)/(MeshH2 % h2 % h3 % (h3+h4));
-      MeshCoef1s3rdp4.slice(iAlt) =  
-        1.0*( MeshH1 % MeshH2 % MeshH4)/(MeshH3 % (h3+h2) % h3 % h4);
-      MeshCoef1s3rdp5.slice(iAlt) = 
-        -1.0*( MeshH1 % MeshH2 % MeshH3)/(MeshH4 % (h2+h3+h4) % (h3+h4) % h4);
+      MeshCoef1s3rdp1.slice(iAlt) =
+        -1.0 * ( MeshH2 % MeshH3 % MeshH4 + MeshH1 % MeshH3 % MeshH4 +
+                 MeshH1 % MeshH2 % MeshH4 + MeshH1 % MeshH2 % MeshH3) /
+        (MeshH1 % MeshH2 % MeshH3 % MeshH4);
+      MeshCoef1s3rdp2.slice(iAlt) =
+        1.0 * ( MeshH2 % MeshH3 % MeshH4) / (h1 % h2 % (h2 + h3) % (h2 + h3 + h4));
+      MeshCoef1s3rdp3.slice(iAlt) =
+        -1.0 * ( MeshH1 % MeshH3 % MeshH4) / (MeshH2 % h2 % h3 % (h3 + h4));
+      MeshCoef1s3rdp4.slice(iAlt) =
+        1.0 * ( MeshH1 % MeshH2 % MeshH4) / (MeshH3 % (h3 + h2) % h3 % h4);
+      MeshCoef1s3rdp5.slice(iAlt) =
+        -1.0 * ( MeshH1 % MeshH2 % MeshH3) / (MeshH4 % (h2 + h3 + h4) % (h3 + h4) % h4);
     }
   }
+
   report.print(4, "ending calc_alt_grid_spacing");
   return;
 }

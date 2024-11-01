@@ -109,7 +109,8 @@ void Electrodynamics::set_all_indices_for_ie(Times time,
   float au = indices.get_index(time_now, iAU_);
   float al = indices.get_index(time_now, iAL_);
 
-  if (imfbz < -1e31) report.error("There doesnt seem to be any IMF Bz!");
+  if (imfbz < -1e31)
+    report.error("There doesnt seem to be any IMF Bz!");
 
   if (report.test_verbose(3)) {
     std::cout << "time now : " << time_now << "\n";
@@ -187,39 +188,49 @@ bool Electrodynamics::update(Planets planet,
       int64_t nZs = gGrid.get_nZ();
       int64_t iZ;
       int iError;
+
       for (iZ = 0; iZ < nZs; iZ++) {
         copy_mat_to_array(gGrid.magLocalTime_scgc.slice(iZ), mlt2d, true);
         copy_mat_to_array(gGrid.magLat_scgc.slice(iZ), lat2d, true);
 
         ie_set_mlts(mlt2d, &iError);
+
         if (iError != 0) {
           didWork = false;
           report.error("Error in ie_set_mlts");
         }
+
         if (didWork)
           ie_set_lats(lat2d, &iError);
+
         if (iError != 0) {
           didWork = false;
           report.error("Error in ie_set_lats");
         }
+
         if (didWork)
           ie_update_grid(&iError);
+
         if (iError != 0) {
           didWork = false;
           report.error("Error in ie_update_grid");
         }
+
         if (didWork)
           ie_get_potential(pot2d, &iError);
+
         if (iError != 0) {
           didWork = false;
           report.error("Error in ie_get_potential");
           std::cout << "ie_get_potential iError : " << iError << "\n";
         }
+
         copy_array_to_mat(pot2d, ions.potential_scgc.slice(iZ), true);
 
         if (iZ == nZs - 1) {
           if (didWork) {
             ie_get_electron_diffuse_aurora(eflux2d, avee2d, &iError);
+
             if (iError != 0) {
               didWork = false;
               report.error("Error in ie_get_electron_diffuse_aurora");
@@ -227,6 +238,7 @@ bool Electrodynamics::update(Planets planet,
             } else {
               copy_array_to_mat(avee2d, ions.avee, true);
               copy_array_to_mat(eflux2d, ions.eflux, true);
+
               if (report.test_verbose(3)) {
                 std::cout << "I have eflux2d: " << ions.eflux << "\n";
                 std::cout << "I have potential: " <<  ions.potential_scgc.slice(iZ) << "\n";

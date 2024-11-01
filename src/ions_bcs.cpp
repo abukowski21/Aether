@@ -24,27 +24,27 @@ bool Ions::set_bcs(Grid grid,
                    Times time,
                    Indices indices) {
 
-    std::string function = "Ions::set_bcs";
-    static int iFunction = -1;
-    report.enter(function, iFunction);
+  std::string function = "Ions::set_bcs";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
 
-    bool didWork = true;
+  bool didWork = true;
 
-    if (grid.get_nZ(false) > 1) {
-        didWork = set_lower_bcs(grid, time, indices);
+  if (grid.get_nZ(false) > 1) {
+    didWork = set_lower_bcs(grid, time, indices);
 
-        if (didWork)
-            didWork = set_upper_bcs(grid);
+    if (didWork)
+      didWork = set_upper_bcs(grid);
 
-        if (didWork)
-            fill_electrons();
-    }
+    if (didWork)
+      fill_electrons();
+  }
 
-    if (!didWork)
-        report.error("issue with ion BCs!");
+  if (!didWork)
+    report.error("issue with ion BCs!");
 
-    report.exit(function);
-    return didWork;
+  report.exit(function);
+  return didWork;
 }
 
 //----------------------------------------------------------------------
@@ -53,44 +53,44 @@ bool Ions::set_bcs(Grid grid,
 
 bool Ions::set_upper_bcs(Grid grid) {
 
-    std::string function = "Ions::set_upper_bcs";
-    static int iFunction = -1;
-    report.enter(function, iFunction);
+  std::string function = "Ions::set_upper_bcs";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
 
-    bool didWork = true;
+  bool didWork = true;
 
-    int64_t nAlts = grid.get_nZ();
-    int64_t nX = grid.get_nX(), iX;
-    int64_t nY = grid.get_nY(), iY;
-    int64_t nGCs = grid.get_nGCs();
-    int64_t iAlt;
-    arma_mat h;
-    arma_mat aveT;
+  int64_t nAlts = grid.get_nZ();
+  int64_t nX = grid.get_nX(), iX;
+  int64_t nY = grid.get_nY(), iY;
+  int64_t nGCs = grid.get_nGCs();
+  int64_t iAlt;
+  arma_mat h;
+  arma_mat aveT;
 
-    for (iAlt = nAlts - nGCs; iAlt < nAlts; iAlt++) {
-        // Bulk Quantities:
-        temperature_scgc.slice(iAlt) = temperature_scgc.slice(iAlt - 1);
+  for (iAlt = nAlts - nGCs; iAlt < nAlts; iAlt++) {
+    // Bulk Quantities:
+    temperature_scgc.slice(iAlt) = temperature_scgc.slice(iAlt - 1);
 
-        // For each species:
-        for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-            species[iSpecies].temperature_scgc.slice(iAlt) =
-                species[iSpecies].temperature_scgc.slice(iAlt - 1);
+    // For each species:
+    for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+      species[iSpecies].temperature_scgc.slice(iAlt) =
+        species[iSpecies].temperature_scgc.slice(iAlt - 1);
 
-            aveT = (species[iSpecies].temperature_scgc.slice(iAlt) + 
-                    electron_temperature_scgc.slice(iAlt));
-            // Calculate scale height for the species:
-            h = cKB / species[iSpecies].mass * 
-                species[iSpecies].temperature_scgc.slice(iAlt) /
-                abs(grid.gravity_vcgc[2].slice(iAlt));
-            // Assume each species falls of with (modified) hydrostatic:
-            species[iSpecies].density_scgc.slice(iAlt) =
-                species[iSpecies].density_scgc.slice(iAlt - 1) %
-                exp(-grid.dalt_lower_scgc.slice(iAlt) / h);
-        }
+      aveT = (species[iSpecies].temperature_scgc.slice(iAlt) +
+              electron_temperature_scgc.slice(iAlt));
+      // Calculate scale height for the species:
+      h = cKB / species[iSpecies].mass *
+          species[iSpecies].temperature_scgc.slice(iAlt) /
+          abs(grid.gravity_vcgc[2].slice(iAlt));
+      // Assume each species falls of with (modified) hydrostatic:
+      species[iSpecies].density_scgc.slice(iAlt) =
+        species[iSpecies].density_scgc.slice(iAlt - 1) %
+        exp(-grid.dalt_lower_scgc.slice(iAlt) / h);
     }
+  }
 
-    report.exit(function);
-    return didWork;
+  report.exit(function);
+  return didWork;
 }
 
 //----------------------------------------------------------------------
@@ -99,38 +99,38 @@ bool Ions::set_upper_bcs(Grid grid) {
 
 bool Ions::set_lower_bcs(Grid grid, Times time, Indices indices) {
 
-    std::string function = "Ions::set_lower_bcs";
-    static int iFunction = -1;
-    report.enter(function, iFunction);
+  std::string function = "Ions::set_lower_bcs";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
 
-    bool didWork = true;
+  bool didWork = true;
 
-    int64_t nAlts = grid.get_nZ();
-    int64_t nX = grid.get_nX(), iX;
-    int64_t nY = grid.get_nY(), iY;
-    int64_t nGCs = grid.get_nGCs();
-    int64_t iAlt;
-    arma_mat h;
-    arma_mat aveT;
+  int64_t nAlts = grid.get_nZ();
+  int64_t nX = grid.get_nX(), iX;
+  int64_t nY = grid.get_nY(), iY;
+  int64_t nGCs = grid.get_nGCs();
+  int64_t iAlt;
+  arma_mat h;
+  arma_mat aveT;
 
-    for (iAlt = nGCs - 1; iAlt >= 0; iAlt--) {
-        // Bulk Quantities:
-        temperature_scgc.slice(iAlt) = temperature_scgc.slice(iAlt + 1);
+  for (iAlt = nGCs - 1; iAlt >= 0; iAlt--) {
+    // Bulk Quantities:
+    temperature_scgc.slice(iAlt) = temperature_scgc.slice(iAlt + 1);
 
-        // For each species:
-        for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-            // assign all species temperatures the bulk temperature:
-            species[iSpecies].temperature_scgc.slice(iAlt) =
-                temperature_scgc.slice(iAlt);
-            // Assume each species falls off a bit.
-            // this BC shouldn't matter, since the bottom of the code
-            // should be in chemical equalibrium:
-            species[iSpecies].density_scgc.slice(iAlt) =
-                0.95 * species[iSpecies].density_scgc.slice(iAlt + 1);
-        }
+    // For each species:
+    for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+      // assign all species temperatures the bulk temperature:
+      species[iSpecies].temperature_scgc.slice(iAlt) =
+        temperature_scgc.slice(iAlt);
+      // Assume each species falls off a bit.
+      // this BC shouldn't matter, since the bottom of the code
+      // should be in chemical equalibrium:
+      species[iSpecies].density_scgc.slice(iAlt) =
+        0.95 * species[iSpecies].density_scgc.slice(iAlt + 1);
     }
+  }
 
-    report.exit(function);
-    return didWork;
+  report.exit(function);
+  return didWork;
 }
 

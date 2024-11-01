@@ -19,62 +19,63 @@ void Neutrals::add_sources(Times time, Planets planet, Grid grid) {
   precision_t dt = time.get_dt();
 
   heating_sources_total = heating_euv_scgc
-                        + heating_chemical_scgc
-                        + heating_ion_friction_scgc
-                        //+ heating_ion_heat_transfer_scgc
-                        - O_cool_scgc
-                        - NO_cool_scgc;
-  
+                          + heating_chemical_scgc
+                          + heating_ion_friction_scgc
+                          //+ heating_ion_heat_transfer_scgc
+                          - O_cool_scgc
+                          - NO_cool_scgc;
+
   // Solve the laplace equations using the source terms,
   // updating the neutral temperature:
   update_temperature(grid, time);
 
   int64_t iDir, iSpec, iSpecies;
   double tSim = time.get_simulation_time();
-  
+
   // Horizontal winds use bulk winds:
-  if (input.get_use_coriolis()) 
+  if (input.get_use_coriolis())
     acc_coriolis = coriolis(velocity_vcgc, planet.get_omega(), grid.geoLat_scgc);
 
-/*
-  // Vertical winds use species winds:
-  for (iSpec = 0; iSpec < nSpeciesAdvect; iSpec++) {
-    // Pick out the advected neutral species:
-    species_chars & advected_neutral = species[species_to_advect[iSpec]];
+  /*
+    // Vertical winds use species winds:
+    for (iSpec = 0; iSpec < nSpeciesAdvect; iSpec++) {
+      // Pick out the advected neutral species:
+      species_chars & advected_neutral = species[species_to_advect[iSpec]];
 
-    iDir = 2;
-    // update velocities based on acceleration:
-    // reduce neutral friction until solver is added
-    advected_neutral.velocity_vcgc[iDir] =
-      advected_neutral.velocity_vcgc[iDir] +
-      dt * (ramp * grid.cent_acc_vcgc[iDir] + 
-	    ramp * acc_coriolis[iDir] + 
-	    advected_neutral.acc_neutral_friction[iDir] / 4.0 +
-	    advected_neutral.acc_ion_drag[iDir] +
-	    advected_neutral.acc_eddy);
-  }
-
-  calc_mass_density();
-  // Calculate bulk vertical winds:
-  velocity_vcgc[2].zeros();
-  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-    if (species[iSpecies].DoAdvect) {
-      velocity_vcgc[2] = velocity_vcgc[2] + 
-        species[iSpecies].mass * species[iSpecies].density_scgc % 
-        species[iSpecies].velocity_vcgc[2] / rho_scgc;
+      iDir = 2;
+      // update velocities based on acceleration:
+      // reduce neutral friction until solver is added
+      advected_neutral.velocity_vcgc[iDir] =
+        advected_neutral.velocity_vcgc[iDir] +
+        dt * (ramp * grid.cent_acc_vcgc[iDir] +
+        ramp * acc_coriolis[iDir] +
+        advected_neutral.acc_neutral_friction[iDir] / 4.0 +
+        advected_neutral.acc_ion_drag[iDir] +
+        advected_neutral.acc_eddy);
     }
-  
-  */
+
+    calc_mass_density();
+    // Calculate bulk vertical winds:
+    velocity_vcgc[2].zeros();
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
+      if (species[iSpecies].DoAdvect) {
+        velocity_vcgc[2] = velocity_vcgc[2] +
+          species[iSpecies].mass * species[iSpecies].density_scgc %
+          species[iSpecies].velocity_vcgc[2] / rho_scgc;
+      }
+
+    */
 
   // Add Velocity sources to bulk winds:
   for (iDir = 0; iDir < 2; iDir++) {
     velocity_vcgc[iDir] =
       velocity_vcgc[iDir] + dt * (
-				  grid.cent_acc_vcgc[iDir] +
-				  acc_coriolis[iDir] + 
-				  acc_ion_collisions[iDir]);
+        grid.cent_acc_vcgc[iDir] +
+        acc_coriolis[iDir] +
+        acc_ion_collisions[iDir]);
     acc_sources_total[iDir].zeros();
   }
+
   // Apply Viscosity:
   update_horizontal_velocity(grid, time);
 
@@ -83,17 +84,17 @@ void Neutrals::add_sources(Times time, Planets planet, Grid grid) {
     for (iDir = 0; iDir < 2; iDir++)
       species[iSpecies].velocity_vcgc[iDir] = velocity_vcgc[iDir];
 
-  /*  
+  /*
   // If we only consider the bulk winds in the horizontal direction:
   if (input.get_advection_neutrals_bulkwinds()) {
     // Calculate Coriolis:
-    if (input.get_use_coriolis()) 
+    if (input.get_use_coriolis())
       acc_coriolis = coriolis(velocity_vcgc, planet.get_omega(), grid.geoLat_scgc);
     // Add Velocity sources to bulk winds:
     for (int iDir = 0; iDir < 3; iDir++) {
       velocity_vcgc[iDir] = velocity_vcgc[iDir] + dt * (
         grid.cent_acc_vcgc[iDir] +
-        acc_coriolis[iDir] + 
+        acc_coriolis[iDir] +
         acc_ion_collisions[iDir]);
       acc_sources_total[iDir].zeros();
     }
@@ -104,9 +105,9 @@ void Neutrals::add_sources(Times time, Planets planet, Grid grid) {
       // Pick out the advected neutral species:
       species_chars & advected_neutral = species[species_to_advect[iSpec]];
       // Calculate Coriolis:
-      if (input.get_use_coriolis()) 
-        acc_coriolis = coriolis(advected_neutral.velocity_vcgc, 
-                                planet.get_omega(), 
+      if (input.get_use_coriolis())
+        acc_coriolis = coriolis(advected_neutral.velocity_vcgc,
+                                planet.get_omega(),
                                 grid.geoLat_scgc);
 
       for (int iDir = 0; iDir < 2; iDir++) {
@@ -114,8 +115,8 @@ void Neutrals::add_sources(Times time, Planets planet, Grid grid) {
         // reduce neutral friction until solver is added
         advected_neutral.velocity_vcgc[iDir] =
           advected_neutral.velocity_vcgc[iDir] +
-          dt * (grid.cent_acc_vcgc[iDir] + 
-                acc_coriolis[iDir] + 
+          dt * (grid.cent_acc_vcgc[iDir] +
+                acc_coriolis[iDir] +
                 advected_neutral.acc_neutral_friction[iDir] / 4.0 +
                 advected_neutral.acc_ion_drag[iDir]);
         // eddy acceleration is only in the vertical direction:

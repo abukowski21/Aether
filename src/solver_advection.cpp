@@ -13,9 +13,9 @@
 // ---------------------------------------------------------
 
 arma_vec limiter_mc(arma_vec &left,
-		    arma_vec &right,
-		    int64_t nPts,
-		    int64_t nGCs) {
+                    arma_vec &right,
+                    int64_t nPts,
+                    int64_t nGCs) {
 
   precision_t beta = 0.8;
 
@@ -34,16 +34,19 @@ arma_vec limiter_mc(arma_vec &left,
       if (left(i) > 0 && right(i) > 0) {
         if (right(i) < limited(i))
           limited(i) = right(i);
-	      if (combined(i) < limited(i))
-	        limited(i) = combined(i);
+
+        if (combined(i) < limited(i))
+          limited(i) = combined(i);
       } else {
-	      if (right(i) > limited(i))
-	        limited(i) = right(i);
-	      if (combined(i) > limited(i))
-	        limited(i) = combined(i);
+        if (right(i) > limited(i))
+          limited(i) = right(i);
+
+        if (combined(i) > limited(i))
+          limited(i) = combined(i);
       }
     }
   }
+
   return limited;
 }
 
@@ -54,9 +57,9 @@ arma_vec limiter_mc(arma_vec &left,
 // ---------------------------------------------------------
 
 arma_vec calc_grad_1d(arma_vec &values,
-		      arma_vec &x,
-		      int64_t nPts,
-		      int64_t nGCs) {
+                      arma_vec &x,
+                      int64_t nPts,
+                      int64_t nGCs) {
 
   arma_vec gradients = values * 0.0;
   arma_vec gradL = values * 0.0;
@@ -70,24 +73,25 @@ arma_vec calc_grad_1d(arma_vec &values,
   arma_vec hv = values * 0.0;
 
   i = nGCs - 1;
-  h = 2.0 / (x(i+1) - x(i));
-  gradR(i) = h * (factor1 * (values(i+1) - values(i)) -
-		  factor2 * (values(i+2) - values(i-1)));
-  gradL(i) = (values(i) - values(i-1)) / (x(i) - x(i-1));
+  h = 2.0 / (x(i + 1) - x(i));
+  gradR(i) = h * (factor1 * (values(i + 1) - values(i)) -
+                  factor2 * (values(i + 2) - values(i - 1)));
+  gradL(i) = (values(i) - values(i - 1)) / (x(i) - x(i - 1));
 
   for (i = nGCs; i < nPts + nGCs; i++) {
-    h = 2.0 / (x(i) - x(i-1));
-    gradL(i) = h * (factor1 * (values(i) - values(i-1)) -
-		    factor2 * (values(i+1) - values(i-2)));
-    h = 2.0 / (x(i+1) - x(i));
-    gradR(i) = h * (factor1 * (values(i+1) - values(i)) -
-		    factor2 * (values(i+2) - values(i-1)));
+    h = 2.0 / (x(i) - x(i - 1));
+    gradL(i) = h * (factor1 * (values(i) - values(i - 1)) -
+                    factor2 * (values(i + 1) - values(i - 2)));
+    h = 2.0 / (x(i + 1) - x(i));
+    gradR(i) = h * (factor1 * (values(i + 1) - values(i)) -
+                    factor2 * (values(i + 2) - values(i - 1)));
   }
+
   i = nPts + nGCs;
-  h = 2.0 / (x(i) - x(i-1));
-  gradL(i) = h * (factor1 * (values(i) - values(i-1)) -
-		  factor2 * (values(i+1) - values(i-2)));
-  gradR(i) = (values(i+1) - values(i)) / (x(i+1) - x(i));
+  h = 2.0 / (x(i) - x(i - 1));
+  gradL(i) = h * (factor1 * (values(i) - values(i - 1)) -
+                  factor2 * (values(i + 1) - values(i - 2)));
+  gradR(i) = (values(i + 1) - values(i)) / (x(i + 1) - x(i));
 
   gradients = limiter_mc(gradL, gradR, nPts, nGCs);
 
@@ -100,9 +104,9 @@ arma_vec calc_grad_1d(arma_vec &values,
 // ---------------------------------------------------------
 
 arma_mat calc_grad(arma_mat values,
-		   arma_mat x,
-		   int64_t nGCs,
-		   bool DoX) {
+                   arma_mat x,
+                   int64_t nGCs,
+                   bool DoX) {
 
   arma_mat v2d, x2d;
 
@@ -121,7 +125,8 @@ arma_mat calc_grad(arma_mat values,
   int64_t nPts = nX - 2 * nGCs;
   arma_vec values1d(nX);
   arma_vec x1d(nX);
-  for (int64_t j = 1; j < nY-1; j++) {
+
+  for (int64_t j = 1; j < nY - 1; j++) {
     values1d = v2d.col(j);
     x1d = x2d.col(j);
     grad2d.col(j) = calc_grad_1d(values1d, x1d, nPts, nGCs);
@@ -129,11 +134,12 @@ arma_mat calc_grad(arma_mat values,
 
   arma_mat gradients;
 
-  if (DoX) {
+  if (DoX)
     gradients = grad2d;
-  } else {
+
+  else
     gradients = grad2d.t();
-  }
+
   return gradients;
 }
 
@@ -144,10 +150,10 @@ arma_mat calc_grad(arma_mat values,
 // ---------------------------------------------------------
 
 arma_mat project_from_left(arma_mat values,
-			   arma_mat gradients,
-			   arma_mat x_centers,
-			   arma_mat x_edges,
-			   int64_t nGCs) {
+                           arma_mat gradients,
+                           arma_mat x_centers,
+                           arma_mat x_edges,
+                           int64_t nGCs) {
 
   int64_t nX = values.n_rows;
   int64_t nY = values.n_cols;
@@ -160,12 +166,14 @@ arma_mat project_from_left(arma_mat values,
   for (int64_t j = 0; j < nY; j++) {
     for (int64_t i = 1; i < nX - 1; i++) {
       projected(i + 1, j) = values(i, j) +
-	      gradients(i, j) * (x_edges(i + 1, j) - x_centers(i, j));
+                            gradients(i, j) * (x_edges(i + 1, j) - x_centers(i, j));
     }
+
     projected(1, j) = projected(2, j);
     projected(0, j) = projected(1, j);
     projected(nX, j) = projected(nX - 1, j);
   }
+
   return projected;
 }
 
@@ -177,10 +185,10 @@ arma_mat project_from_left(arma_mat values,
 // ---------------------------------------------------------
 
 arma_mat project_from_right(arma_mat values,
-			    arma_mat gradients,
-			    arma_mat x_centers,
-			    arma_mat x_edges,
-			    int64_t nGCs) {
+                            arma_mat gradients,
+                            arma_mat x_centers,
+                            arma_mat x_edges,
+                            int64_t nGCs) {
   int64_t nX = values.n_rows;
   int64_t nY = values.n_cols;
 
@@ -192,12 +200,14 @@ arma_mat project_from_right(arma_mat values,
   for (int64_t j = 0; j < nY; j++) {
     for (int64_t i = 1; i < nX - 1; i++) {
       projected(i, j) = values(i, j) +
-	     gradients(i, j) * (x_edges(i, j) - x_centers(i, j));
+                        gradients(i, j) * (x_edges(i, j) - x_centers(i, j));
     }
+
     projected(0, j) = projected(1, j);
     projected(nX - 1, j) = projected(nX - 2, j);
     projected(nX, j) = projected(nX - 1, j);
   }
+
   return projected;
 }
 
@@ -206,9 +216,9 @@ arma_mat project_from_right(arma_mat values,
 // ---------------------------------------------------------
 
 projection_struct project_to_edges(arma_mat &values,
-				   arma_mat &x_centers, arma_mat &x_edges,
-				   arma_mat &y_centers, arma_mat &y_edges,
-				   int64_t nGCs) {
+                                   arma_mat &x_centers, arma_mat &x_edges,
+                                   arma_mat &y_centers, arma_mat &y_edges,
+                                   int64_t nGCs) {
 
   int64_t nX = values.n_rows;
   int64_t nY = values.n_cols;
@@ -219,16 +229,16 @@ projection_struct project_to_edges(arma_mat &values,
   proj.gradDU = calc_grad(values.t(), y_centers.t(), nGCs, true).t();
 
   proj.R = project_from_left(values, proj.gradLR,
-			     x_centers, x_edges, nGCs);
+                             x_centers, x_edges, nGCs);
   // Left side of edge from left
   proj.L = project_from_right(values, proj.gradLR,
-			      x_centers, x_edges, nGCs);
+                              x_centers, x_edges, nGCs);
   // Up side of edge from down (left)
   proj.U = project_from_left(values.t(), proj.gradDU.t(),
-			     y_centers.t(), y_edges.t(), nGCs).t();
+                             y_centers.t(), y_edges.t(), nGCs).t();
   // Down side of edge from up (right)
   proj.D = project_from_right(values.t(), proj.gradDU.t(),
-			      y_centers.t(), y_edges.t(), nGCs).t();
+                              y_centers.t(), y_edges.t(), nGCs).t();
 
   return proj;
 }
@@ -238,10 +248,10 @@ projection_struct project_to_edges(arma_mat &values,
 // ---------------------------------------------------------
 
 precision_t calc_dt(arma_mat &xWidth,
-		    arma_mat &yWidth,
-		    arma_mat &wsLR,
-		    arma_mat &wsDU,
-		    int64_t nGCs) {
+                    arma_mat &yWidth,
+                    arma_mat &wsLR,
+                    arma_mat &wsDU,
+                    int64_t nGCs) {
 
   int64_t nX = xWidth.n_rows;
   int64_t nY = yWidth.n_cols;
@@ -252,14 +262,19 @@ precision_t calc_dt(arma_mat &xWidth,
 
   for (int64_t j = nGCs; j < nY - nGCs; j++) {
     for (int64_t i = nGCs; i < nX - nGCs; i++) {
-      wsX = (wsLR(i+1, j) + wsLR(i, j))/2;
+      wsX = (wsLR(i + 1, j) + wsLR(i, j)) / 2;
       dtX = xWidth(i, j) / wsX;
-      wsY = (wsDU(i, j+1) + wsDU(i, j))/2;
+      wsY = (wsDU(i, j + 1) + wsDU(i, j)) / 2;
       dtY = yWidth(i, j) / wsY;
-      if (dtX < dt) dt = dtX;
-      if (dtY < dt) dt = dtY;
+
+      if (dtX < dt)
+        dt = dtX;
+
+      if (dtY < dt)
+        dt = dtY;
     }
   }
+
   return dt;
 }
 
@@ -281,7 +296,7 @@ void advect(Grid &grid,
   projection_struct tempP;
   projection_struct gammaP;
 
-  precision_t gamma = 5.0/3.0;
+  precision_t gamma = 5.0 / 3.0;
   precision_t dt = time.get_dt();
 
   int64_t nGCs = grid.get_nGCs();
@@ -331,14 +346,15 @@ void advect(Grid &grid,
   for (iAlt = nGCs; iAlt < nAlts - nGCs; iAlt++) {
 
     if (report.test_verbose(3))
-        std::cout << "Advection: Working with iAlt: " << iAlt << "\n";
+      std::cout << "Advection: Working with iAlt: " << iAlt << "\n";
 
     xVel = neutrals.velocity_vcgc[0].slice(iAlt);
     yVel = neutrals.velocity_vcgc[1].slice(iAlt);
     rho = neutrals.rho_scgc.slice(iAlt);
     // this is "e", or temperature expressed as an energy
     gamma2d = neutrals.gamma_scgc.slice(iAlt);
-    t_to_e = 1.0 / (gamma2d - 1.0) * cKB / neutrals.mean_major_mass_scgc.slice(iAlt);
+    t_to_e = 1.0 / (gamma2d - 1.0) * cKB / neutrals.mean_major_mass_scgc.slice(
+               iAlt);
     temp = t_to_e % neutrals.temperature_scgc.slice(iAlt);
 
     // ------------------------------------------------
@@ -353,10 +369,10 @@ void advect(Grid &grid,
     xMomentum = rho % xVel;
     yMomentum = rho % yVel;
 
-    x = grid.x_Center.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
-    y = grid.y_Center.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
-    xEdges = grid.x_Left.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
-    yEdges = grid.y_Down.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
+    x = grid.x_Center.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
+    y = grid.y_Center.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
+    xEdges = grid.x_Left.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
+    yEdges = grid.y_Down.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
 
     rhoP = project_to_edges(rho, x, xEdges, y, yEdges, nGCs);
     xVelP = project_to_edges(xVel, x, xEdges, y, yEdges, nGCs);
@@ -431,16 +447,20 @@ void advect(Grid &grid,
     wsU = sqrt(velU2) + sqrt(gammaP.U % (gammaP.U - 1) % tempP.U);
 
     wsLR = wsR;
+
     for (int64_t i = 0; i < nX + 1; i++) {
       for (int64_t j = 0; j < nY; j++) {
-	       if (wsL(i, j) > wsLR(i, j)) wsLR(i, j) = wsL(i, j);
+        if (wsL(i, j) > wsLR(i, j))
+          wsLR(i, j) = wsL(i, j);
       }
     }
 
     wsDU = wsD;
+
     for (int64_t i = 0; i < nX; i++) {
       for (int64_t j = 0; j < nY + 1; j++) {
-	       if (wsU(i, j) > wsDU(i, j)) wsDU(i, j) = wsU(i, j);
+        if (wsU(i, j) > wsDU(i, j))
+          wsDU(i, j) = wsU(i, j);
       }
     }
 
@@ -473,40 +493,40 @@ void advect(Grid &grid,
     // Update values:
     report.print(3, "Advection: Updating equations of state");
 
-    area = grid.cell_area.slice(iAlt) * grid.radius2_scgc(1,1,iAlt);
-    yWidth = grid.dy_Left.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
-    xWidth = grid.dx_Down.slice(iAlt) * grid.radius_scgc(1,1,iAlt);
-    
-    geometry = 
+    area = grid.cell_area.slice(iAlt) * grid.radius2_scgc(1, 1, iAlt);
+    yWidth = grid.dy_Left.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
+    xWidth = grid.dx_Down.slice(iAlt) * grid.radius_scgc(1, 1, iAlt);
+
+    geometry =
       sin(grid.geoLat_scgc.slice(iAlt)) /
       cos(grid.geoLat_scgc.slice(iAlt)) /
-      grid.radius_scgc(1,1,iAlt);
-    
+      grid.radius_scgc(1, 1, iAlt);
+
     for (int64_t j = nGCs; j < nY - nGCs; j++) {
       for (int64_t i = nGCs; i < nX - nGCs; i++) {
-	//if (i == nGCs) cout << "j = " << j << " " << xWidth(i,j) << "\n";
-	rho(i,j) = rho(i,j) - dt *
-	  (yWidth(i+1,j) * eq1FluxLR(i+1,j) -
-	   yWidth(i,j) * eq1FluxLR(i,j) +
-	   xWidth(i,j+1) * eq1FluxDU(i,j+1) -
-	   xWidth(i,j) * eq1FluxDU(i,j)) / area(i,j);
-	xMomentum(i,j) = xMomentum(i,j) - dt *
-	  ((yWidth(i+1,j) * eq2FluxLR(i+1,j) -
-	    yWidth(i,j) * eq2FluxLR(i,j) +
-	    xWidth(i,j+1) * eq2FluxDU(i,j+1) -
-	    xWidth(i,j) * eq2FluxDU(i,j)) / area(i,j) -
-	   geometry(i,j) * eq2Flux(i,j));
-	yMomentum(i,j) = yMomentum(i,j) - dt *
-	  ((yWidth(i+1,j) * eq3FluxLR(i+1,j) -
-	    yWidth(i,j) * eq3FluxLR(i,j) +
-	    xWidth(i,j+1) * eq3FluxDU(i,j+1) -
-	    xWidth(i,j) * eq3FluxDU(i,j)) / area(i,j) +
-	   geometry(i,j) * eq3Flux(i,j));
-	totalE(i,j) = totalE(i,j) - dt *
-	  (yWidth(i+1,j) * eq4FluxLR(i+1,j) -
-	   yWidth(i,j) * eq4FluxLR(i,j) +
-	   xWidth(i,j+1) * eq4FluxDU(i,j+1) -
-	   xWidth(i,j) * eq4FluxDU(i,j)) / area(i,j);
+        //if (i == nGCs) cout << "j = " << j << " " << xWidth(i,j) << "\n";
+        rho(i, j) = rho(i, j) - dt *
+                    (yWidth(i + 1, j) * eq1FluxLR(i + 1, j) -
+                     yWidth(i, j) * eq1FluxLR(i, j) +
+                     xWidth(i, j + 1) * eq1FluxDU(i, j + 1) -
+                     xWidth(i, j) * eq1FluxDU(i, j)) / area(i, j);
+        xMomentum(i, j) = xMomentum(i, j) - dt *
+                          ((yWidth(i + 1, j) * eq2FluxLR(i + 1, j) -
+                            yWidth(i, j) * eq2FluxLR(i, j) +
+                            xWidth(i, j + 1) * eq2FluxDU(i, j + 1) -
+                            xWidth(i, j) * eq2FluxDU(i, j)) / area(i, j) -
+                           geometry(i, j) * eq2Flux(i, j));
+        yMomentum(i, j) = yMomentum(i, j) - dt *
+                          ((yWidth(i + 1, j) * eq3FluxLR(i + 1, j) -
+                            yWidth(i, j) * eq3FluxLR(i, j) +
+                            xWidth(i, j + 1) * eq3FluxDU(i, j + 1) -
+                            xWidth(i, j) * eq3FluxDU(i, j)) / area(i, j) +
+                           geometry(i, j) * eq3Flux(i, j));
+        totalE(i, j) = totalE(i, j) - dt *
+                       (yWidth(i + 1, j) * eq4FluxLR(i + 1, j) -
+                        yWidth(i, j) * eq4FluxLR(i, j) +
+                        xWidth(i, j + 1) * eq4FluxDU(i, j + 1) -
+                        xWidth(i, j) * eq4FluxDU(i, j)) / area(i, j);
       }
     }
 
@@ -517,42 +537,45 @@ void advect(Grid &grid,
     neutrals.velocity_vcgc[1].slice(iAlt) = yVel;
     temp = (totalE / rho - 0.5 * (xVel % xVel + yVel % yVel)) / t_to_e;
     temp.clamp(200, 2000);
-    
+
     //precision_t fac, dm, dp;
-    
+
     for (int64_t j = nGCs; j < nY - nGCs; j++) {
       for (int64_t i = nGCs; i < nX - nGCs; i++) {
-	//fac = 1.0;
-	//if (cos(grid.geoLat_scgc(i,j,iAlt)) < 0.2) {
-	//  fac = fac * (0.2 - cos(grid.geoLat_scgc(i,j,iAlt)));
-	//}
-	//dm = (1.0 - fac) * neutrals.temperature_scgc(i,j,iAlt);
-	//dp = (1.0 + fac) * neutrals.temperature_scgc(i,j,iAlt);
-	//if (temp(i,j) < dm) temp(i,j) = dm;
-	//if (temp(i,j) > dp) temp(i,j) = dp;
-	neutrals.temperature_scgc(i,j,iAlt) = temp(i,j);
+        //fac = 1.0;
+        //if (cos(grid.geoLat_scgc(i,j,iAlt)) < 0.2) {
+        //  fac = fac * (0.2 - cos(grid.geoLat_scgc(i,j,iAlt)));
+        //}
+        //dm = (1.0 - fac) * neutrals.temperature_scgc(i,j,iAlt);
+        //dp = (1.0 + fac) * neutrals.temperature_scgc(i,j,iAlt);
+        //if (temp(i,j) < dm) temp(i,j) = dm;
+        //if (temp(i,j) > dp) temp(i,j) = dp;
+        neutrals.temperature_scgc(i, j, iAlt) = temp(i, j);
 
-	//dm = (1.0 - fac) * neutrals.rho_scgc(i,j,iAlt);
-	//dp = (1.0 + fac) * neutrals.rho_scgc(i,j,iAlt);
-	//if (rho(i,j) < dm) rho(i,j) = dm;
-	//if (rho(i,j) > dp) rho(i,j) = dp;
-	neutrals.rho_scgc(i,j,iAlt) = rho(i,j);
+        //dm = (1.0 - fac) * neutrals.rho_scgc(i,j,iAlt);
+        //dp = (1.0 + fac) * neutrals.rho_scgc(i,j,iAlt);
+        //if (rho(i,j) < dm) rho(i,j) = dm;
+        //if (rho(i,j) > dp) rho(i,j) = dp;
+        neutrals.rho_scgc(i, j, iAlt) = rho(i, j);
       }
     }
+
     if (report.test_verbose(3) && iAlt == 8) {
-      std::cout << "end t : " << neutrals.temperature_scgc.slice(iAlt).min() << " " << neutrals.temperature_scgc.slice(iAlt).max() << "\n";
+      std::cout << "end t : " << neutrals.temperature_scgc.slice(
+                  iAlt).min() << " " << neutrals.temperature_scgc.slice(iAlt).max() << "\n";
       std::cout << "end temp : " << temp.min() << " " << temp.max() << "\n";
       std::cout << "end xVel : " << xVel.min() << " " << xVel.max() << "\n";
       std::cout << "end yVel : " << yVel.min() << " " << yVel.max() << "\n";
     }
   }
+
   neutrals.calc_density_from_mass_concentration();
 
   // Assign bulk horizontal velocity to all species:
   for (int64_t iSpecies = 0; iSpecies < neutrals.nSpecies; iSpecies++)
     for (int64_t iDir = 0; iDir < 2; iDir++)
       neutrals.species[iSpecies].velocity_vcgc[iDir] = neutrals.velocity_vcgc[iDir];
-  
+
   report.exit(function);
   return;
 }

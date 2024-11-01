@@ -88,6 +88,7 @@ bool read_and_store_indices(Indices &indices) {
   // ---------------------------------------------------
 
   int nFiles = input.get_number_of_omniweb_files();
+
   if (report.test_verbose(1))
     std::cout << "Number of OMNIWeb files : " << nFiles << "\n";
 
@@ -122,10 +123,12 @@ bool read_and_store_indices(Indices &indices) {
   } else {
     if (report.test_verbose(0)) {
       std::cout << "--> WARNING : There were no OMNIWeb files specified!\n";
-      std::cout << "-->         : If this was not your intent, check the aether.json file\n";
+      std::cout <<
+                "-->         : If this was not your intent, check the aether.json file\n";
       std::cout << "-->         : line needs to be: \n";
       std::cout << "-->         : \"OmniwebFiles\": [\"filename\"] \n";
     }
+
     report.error("WARNING : OMNIWeb file not set!!!");
   }
 

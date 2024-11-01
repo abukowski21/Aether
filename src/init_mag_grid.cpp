@@ -12,8 +12,8 @@
 //  https://arxiv.org/pdf/physics/0606044
 //
 // ----------------------------------------------------------------------
-std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision_t p)
-{
+std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q,
+                                                        precision_t p) {
   // return quanties
   precision_t r, theta;
   // Intermediate quantities:
@@ -22,7 +22,8 @@ std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision
   term0 = 256.0 / 27.0 * pow(q, 2.0) * pow(p, 4.0);
   term1 = pow((1.0 + sqrt(1.0 + term0)), 2.0 / 3.0);
   term2 = pow(term0, 1.0 / 3.0);
-  term3 = 0.5 * pow(((pow(term1, 2) + term1 * term2 + pow(term2, 2)) / term1), 3.0 / 2.0);
+  term3 = 0.5 * pow(((pow(term1, 2) + term1 * term2 + pow(term2, 2)) / term1),
+                    3.0 / 2.0);
 
   r = p * (4.0 * term3) / (1.0 + term3) / (1.0 + sqrt(2.0 * term3 - 1.0));
 
@@ -39,8 +40,7 @@ std::pair<precision_t, precision_t> Grid::qp_to_r_theta(precision_t q, precision
 //   are read from input files. And, of course, the numbers of each coordinate
 // - nLats must be even!!
 // ----------------------------------------------------------------------
-void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
-{
+void Grid::init_dipole_grid(Quadtree quadtree, Planets planet) {
 
   std::string function = "Grid::init_dipole_grid";
   static int iFunction = -1;
@@ -91,13 +91,13 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
 
   // Quick 1D check for longitudes:
   // Same as geo_grid here...
-  if (!HasXdim) dlon = 1.0 * cDtoR;
+  if (!HasXdim)
+    dlon = 1.0 * cDtoR;
 
   for (iLon = 0; iLon < nLons; iLon++)
     lon1d(iLon) = lon0 + (iLon - nGCs + 0.5) * dlon;
 
-  for (iLat = 0; iLat < nLats; iLat++)
-  {
+  for (iLat = 0; iLat < nLats; iLat++) {
     for (iAlt = 0; iAlt < nAlts; iAlt++)
       magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
   }
@@ -117,7 +117,7 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   // - nZ=nAlts*2 - (we fill up HALF field lines)
   // - nZby2 = nAlts
   // -> Plus, experinemtal support for altitude ghost cells...
-  int64_t nF = (nLats) / 2 , nZ = (nAlts) * 2, nZby2 = (nAlts);
+  int64_t nF = (nLats) / 2, nZ = (nAlts) * 2, nZby2 = (nAlts);
   // lShells and baseLats are currently set for southern hemisphere then mirrored
   arma_vec Lshells(nF), baseLats(nF);
 
@@ -126,23 +126,19 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   del_lat = (blat_max_ - blat_min_) / (nF - nGCs * 2.0);
 
   // now make sure the user used 1 or an even number for nLats
-  if (nLats % 2 != 0)
-  {
-    if (!HasYdim) 
-    {
+  if (nLats % 2 != 0) {
+    if (!HasYdim) {
       del_lat = 1.0 * cDtoR;
       report.print(0, "Running in single latitude dimension. Experinental!!");
       nF = 1;
-    }
-    else
+    } else
       report.error("Cannot use odd nLats with dipole grid!");
   }
 
   // loop over all cells - everything including the ghost cells
   // -> This means some points will go over the pole (baseLat > +- 90 degrees)
   //    They're taken care of in the conversion to geographic coordinates.
-  for (int i = 0; i < nF; i++)
-  {
+  for (int i = 0; i < nF; i++) {
     // first put down "linear" spacing
     tmp_lat = blat_min_ + del_lat * (i - nGCs + 0.5);
     // then scale it according to the exponent & acos
@@ -150,6 +146,7 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
     // place values in array backwards, South pole -> equator.
     baseLats(nF - i - 1) = -tmp_lat;
   }
+
   report.print(3, "Done setting base latitudes for dipole grid.");
 
   // Find L-Shell for each baseLat
@@ -177,10 +174,10 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   std::pair<precision_t, precision_t> r_theta;
 
   for (int i = 0; i < nAlts; i++)
-    exp_q_dist(i) = Gamma + (1 - Gamma) * exp(-pow(((i - nZby2) / (nZ / 10.0)), 2.0));
+    exp_q_dist(i) = Gamma + (1 - Gamma) * exp(-pow(((i - nZby2) / (nZ / 10.0)),
+                                                   2.0));
 
-  for (int i_nF = 0; i_nF < nF; i_nF++)
-  {
+  for (int i_nF = 0; i_nF < nF; i_nF++) {
     // min/max q
     q_S = -cos(cPI / 2 + baseLats(i_nF)) / pow(min_alt_re, 2.0);
     q_N = -q_S;
@@ -188,8 +185,7 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
     // calculate const. stride similar to sami2/3 (huba & joyce 2000)
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
     // inlo loop thru southern hemisphere, mirror in  north.
-    for (int i_nZ = 0; i_nZ < nAlts; i_nZ++)
-    {
+    for (int i_nZ = 0; i_nZ < nAlts; i_nZ++) {
       // This won't work for offset dipoles.
       // Doesn't have any lat/lon dependence.
       delqp = (q_N - q_S) / (nZ + 1);
@@ -207,6 +203,7 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
       bLats(i_nF, i_nZ) = r_theta.second;
     }
   }
+
   report.print(3, "Done generating q-spacing for dipole grid.");
 
   arma_vec rNorm1d(nAlts), lat1dAlong(nAlts);
@@ -214,25 +211,25 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
 
   // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
 
-  for (iLat = 0; iLat < nLats / 2; iLat++)
-  {
-    for (iLon = 0; iLon < nLons; iLon++)
-    {
+  for (iLat = 0; iLat < nLats / 2; iLat++) {
+    for (iLon = 0; iLon < nLons; iLon++) {
       // Not currently used. Dipole isn't offset. Leaving just in case.
       // Lon = magPhi_scgc(iLon, iLat, 1);
 
-      for (iAlt = 0; iAlt < nAlts; iAlt++)
-      {
+      for (iAlt = 0; iAlt < nAlts; iAlt++) {
         lat1dAlong(iAlt) = bLats(iLat, iAlt);
         rNorm1d(iAlt) = bAlts(iLat, iAlt);
       }
+
       r3d.tube(iLon, iLat) = rNorm1d * planetRadius;
       r3d.tube(iLon, nLats - iLat - 1) = rNorm1d * planetRadius;
       magLat_scgc.tube(iLon, iLat) = lat1dAlong;
       magLat_scgc.tube(iLon, nLats - iLat - 1) = -lat1dAlong;
     }
   }
-  report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
+
+  report.print(3,
+               "Done generating symmetric latitude & altitude spacing in dipole.");
 
   geoLat_scgc = magLat_scgc;
   magAlt_scgc = r3d - planetRadius;
@@ -246,8 +243,7 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
   gravity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
 
-  for (int iV = 0; iV < 3; iV++)
-  {
+  for (int iV = 0; iV < 3; iV++) {
     rad_unit_vcgc[iV].zeros();
     gravity_vcgc[iV].zeros();
   }
@@ -268,9 +264,9 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   gravity_potential_scgc.set_size(nX, nY, nAlts);
   gravity_potential_scgc.zeros();
   gravity_mag_scgc = sqrt(
-      gravity_vcgc[0] % gravity_vcgc[0] +
-      gravity_vcgc[1] % gravity_vcgc[1] +
-      gravity_vcgc[2] % gravity_vcgc[2]);
+                       gravity_vcgc[0] % gravity_vcgc[0] +
+                       gravity_vcgc[1] % gravity_vcgc[1] +
+                       gravity_vcgc[2] % gravity_vcgc[2]);
 
   report.print(4, "Done gravity calculations for the dipole grid.");
 
@@ -293,7 +289,8 @@ void Grid::init_dipole_grid(Quadtree quadtree, Planets planet)
   geoLon_scgc = llr[0];
   geoLat_scgc = llr[1];
   geoAlt_scgc = llr[2] - planetRadius;
-  report.print(4, "Done dipole -> geographic transformations for the dipole grid.");
+  report.print(4,
+               "Done dipole -> geographic transformations for the dipole grid.");
 
   calc_alt_grid_spacing();
   report.print(4, "Done altitude spacing for the dipole grid.");

@@ -31,6 +31,7 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   tmp.newDensity_scgc.ones();
   tmp.velocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
   tmp.newVelocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
+
   for (int iDir = 0; iDir < 3; iDir++) {
     tmp.velocity_vcgc[iDir].zeros();
     tmp.newVelocity_vcgc[iDir].zeros();
@@ -46,6 +47,7 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
 
   tmp.acc_neutral_friction = make_cube_vector(nLons, nLats, nAlts, 3);
   tmp.acc_ion_drag = make_cube_vector(nLons, nLats, nAlts, 3);
+
   for (int iDir = 0; iDir < 3; iDir++) {
     tmp.acc_neutral_friction[iDir].zeros();
     tmp.acc_ion_drag[iDir].zeros();
@@ -156,7 +158,7 @@ Neutrals::Neutrals(Grid grid,
   heating_ion_friction_scgc.set_size(nLons, nLats, nAlts);
   heating_ion_friction_scgc.zeros();
   heating_ion_heat_transfer_scgc.set_size(nLons, nLats, nAlts);
-  heating_ion_heat_transfer_scgc.zeros();  
+  heating_ion_heat_transfer_scgc.zeros();
   O_cool_scgc.set_size(nLons, nLats, nAlts);
   O_cool_scgc.zeros();
   NO_cool_scgc.set_size(nLons, nLats, nAlts);
@@ -168,7 +170,7 @@ Neutrals::Neutrals(Grid grid,
   acc_ion_collisions = make_cube_vector(nLons, nLats, nAlts, 3);
   // bulk coriolis acceleration:
   acc_coriolis = make_cube_vector(nLons, nLats, nAlts, 3);
-  
+
   // bulk ion_neutral collisional acceleration:
   acc_sources_total = make_cube_vector(nLons, nLats, nAlts, 3);
 
@@ -245,8 +247,10 @@ void Neutrals::fill_with_hydrostatic(int64_t iStart,
                                      Grid grid) {
 
   int64_t iNeutral, iSpecies;
+
   for (iNeutral = 0; iNeutral < nSpeciesAdvect; iNeutral++) {
     iSpecies = species_to_advect[iNeutral];
+
     // Integrate with hydrostatic equilibrium up:
     for (int iAlt = iStart; iAlt < iEnd; iAlt++) {
       species[iSpecies].density_scgc.slice(iAlt) =
@@ -327,6 +331,7 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   bool didWork = true;
 
   isBad = !all_finite(density_scgc, "density_scgc");
+
   if (isBad) {
     report.error("non-finite found in neutral density!");
     report.error("from location : " + location);
@@ -334,18 +339,21 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   }
 
   int64_t iSpecies;
+
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     isBad = !all_finite(species[iSpecies].density_scgc,
-			species[iSpecies].cName + " density");
+                        species[iSpecies].cName + " density");
+
     if (isBad) {
       report.error("non-finite found in " +
-		   species[iSpecies].cName + " density!");
+                   species[iSpecies].cName + " density!");
       report.error("from location : " + location);
       didWork = false;
     }
   }
-  
+
   isBad = !all_finite(temperature_scgc, "temperature_scgc");
+
   if (isBad) {
     report.error("non-finite found in neutral temperature!");
     report.error("from location : " + location);
@@ -353,24 +361,27 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   }
 
   isBad = !all_finite(velocity_vcgc, "velocity_vcgc");
+
   if (isBad) {
     report.error("non-finite found in neutral velocity!");
     report.error("from location : " + location);
     didWork = false;
   }
+
   didWork = sync_across_all_procs(didWork);
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     isBad = !all_finite(species[iSpecies].velocity_vcgc,
-			species[iSpecies].cName + " velocity!");
+                        species[iSpecies].cName + " velocity!");
+
     if (isBad) {
-      report.error("non-finite found in " + 
-		   species[iSpecies].cName + " velocity!");
+      report.error("non-finite found in " +
+                   species[iSpecies].cName + " velocity!");
       report.error("from location : " + location);
       didWork = false;
     }
   }
-  
+
   return didWork;
 }
 

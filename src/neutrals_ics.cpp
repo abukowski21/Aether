@@ -38,6 +38,7 @@ bool Neutrals::initial_conditions(Grid grid,
   if (input.get_do_restart()) {
     report.print(1, "Restarting! Reading neutral files!");
     didWork = restart_file(input.get_restartin_dir(), DoRead);
+
     if (!didWork)
       report.error("Reading Restart for Neutrals Failed!!!");
   } else {
@@ -148,9 +149,10 @@ bool Neutrals::initial_conditions(Grid grid,
                   temp1d[iAlt] =
                     (1.0 - r) * initial_temperatures[iA] +
                     (r) * initial_temperatures[iA + 1];
-               }
+                }
               }
             }
+
             temperature_scgc.tube(iLon, iLat) = temp1d;
           }
         }
@@ -168,13 +170,15 @@ bool Neutrals::initial_conditions(Grid grid,
       // Set the lower boundary condition:
       for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
         species[iSpecies].density_scgc.slice(0).
-          fill(species[iSpecies].lower_bc_density);
+        fill(species[iSpecies].lower_bc_density);
       }
+
       calc_scale_height(grid);
       set_lower_bcs(grid, time, indices);
+
       for (int iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-	fill_with_hydrostatic(iSpecies, nGCs, nAlts, grid);
-      
+        fill_with_hydrostatic(iSpecies, nGCs, nAlts, grid);
+
     } // type = planet
   }
 

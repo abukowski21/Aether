@@ -4,7 +4,7 @@
 #include "aether.h"
 
 // ---------------------------------------------------------------------
-// This calculates the velocities in one cell. The inputs are the 
+// This calculates the velocities in one cell. The inputs are the
 // updated velocities given all of the acceleration terms. This is the right
 // side of the equation (source terms * dt + Vold).  The velocities
 // of all species are solved for together, since they are interdependent.
@@ -12,8 +12,9 @@
 // implicit solver.  There is a semi-implicit solver below.
 // ---------------------------------------------------------------------
 
-arma_vec Neutrals::calc_friction_one_cell(int64_t iLon, int64_t iLat, int64_t iAlt,
-                                   precision_t dt, arma_vec &vels) {
+arma_vec Neutrals::calc_friction_one_cell(int64_t iLon, int64_t iLat,
+                                          int64_t iAlt,
+                                          precision_t dt, arma_vec &vels) {
   std::string function = "neutral_friction_one_cell";
   static int iFunction = -1;
   report.enter(function, iFunction);
@@ -53,6 +54,7 @@ arma_vec Neutrals::calc_friction_one_cell(int64_t iLon, int64_t iLat, int64_t iA
   } // iSpec loop
 
   matrix = -1 * coefmatrix * dt;
+
   // Fill in diagonal of matrix:
   for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++)
     matrix(iSpecies, iSpecies) = 1 - sum(coefmatrix.row(iSpecies));
@@ -72,7 +74,7 @@ arma_vec Neutrals::calc_friction_one_cell(int64_t iLon, int64_t iLat, int64_t iA
 // since there needs to be a full matrix solve in each cell, but it ties
 // the velocities together.
 // ---------------------------------------------------------------------
-               
+
 void Neutrals::calc_neutral_friction_implicit(precision_t dt) {
 
   std::string function = "calc_neutral_friction";
@@ -91,6 +93,7 @@ void Neutrals::calc_neutral_friction_implicit(precision_t dt) {
     for (iDir = 0; iDir < 3; iDir++)
       species[iSpecies].acc_neutral_friction[iDir].zeros();
   }
+
   if (input.get_advection_neutrals_vertical() != "hydro") {
 
     arma_vec vels(nSpeciesAdvect, fill::zeros);
@@ -110,23 +113,25 @@ void Neutrals::calc_neutral_friction_implicit(precision_t dt) {
             // Only worry about the vertical direction for now:
             iDir = 2;
             //for (iDir = 0; iDir < 3; iDir++) {
-              vels.zeros();
+            vels.zeros();
 
-              // The velocities are just after the vertical solver, so the velocities are
-              // the source terms for the friction solver.
-              for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++) {
-                iSpecies_ = species_to_advect[iSpecies];
-                vels(iSpecies) =
-                  species[iSpecies_].newVelocity_vcgc[iDir](iLon, iLat, iAlt);
-              }
+            // The velocities are just after the vertical solver, so the velocities are
+            // the source terms for the friction solver.
+            for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++) {
+              iSpecies_ = species_to_advect[iSpecies];
+              vels(iSpecies) =
+                species[iSpecies_].newVelocity_vcgc[iDir](iLon, iLat, iAlt);
+            }
 
-              // = neutral_friction_one_cell(iLon, iLat, iAlt, vels);
-              new_vels = calc_friction_one_cell(iLon, iLat, iAlt, dt, vels);
+            // = neutral_friction_one_cell(iLon, iLat, iAlt, vels);
+            new_vels = calc_friction_one_cell(iLon, iLat, iAlt, dt, vels);
 
-              for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++) {
-                iSpecies_ = species_to_advect[iSpecies];
-                species[iSpecies_].newVelocity_vcgc[iDir](iLon, iLat, iAlt) = new_vels(iSpecies);
-              } // iSpeciesAdvect
+            for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++) {
+              iSpecies_ = species_to_advect[iSpecies];
+              species[iSpecies_].newVelocity_vcgc[iDir](iLon, iLat,
+                                                        iAlt) = new_vels(iSpecies);
+            } // iSpeciesAdvect
+
             //} // for direction
           } // for long
         } // for lat
@@ -141,7 +146,7 @@ void Neutrals::calc_neutral_friction_implicit(precision_t dt) {
 
 
 // ---------------------------------------------------------------------
-// If we are solving this system semi-implicitly, we don't need to do a 
+// If we are solving this system semi-implicitly, we don't need to do a
 // matrix solve in each cell, so we can calculate all of the variables
 // before doing the time-stepping in the vertical solver.
 // semi-implicit means using the current velocity on both the left and
@@ -167,9 +172,11 @@ void Neutrals::calc_neutral_friction_coefs() {
   // Initialize all of the accelerations to zero:
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     species[iSpecies_].neutral_friction_coef.zeros();
+
     for (iDir = 0; iDir < 3; iDir++)
       species[iSpecies].acc_neutral_friction[iDir].zeros();
   }
+
   if (input.get_advection_neutrals_vertical() != "hydro") {
 
     for (iSpecies = 0; iSpecies < nSpeciesAdvect; iSpecies++) {
@@ -179,18 +186,21 @@ void Neutrals::calc_neutral_friction_coefs() {
         cKB *
         temperature_scgc /
         species[iSpecies_].mass;
+
       for (jSpecies = 0; jSpecies < nSpeciesAdvect; jSpecies++) {
         jSpecies_ = species_to_advect[jSpecies];
+
         if (iSpecies_ == jSpecies_)
           continue;
+
         tpower = pow(temperature_scgc, species[iSpecies_].diff_exp[jSpecies_]);
         // NEED TO REMOVE /100!!!
-        coef = ktom % species[jSpecies_].density_scgc / 
-          (species[iSpecies_].diff0[jSpecies_] * tpower) / 100.0;
-        species[iSpecies_].neutral_friction_coef = 
+        coef = ktom % species[jSpecies_].density_scgc /
+               (species[iSpecies_].diff0[jSpecies_] * tpower) / 100.0;
+        species[iSpecies_].neutral_friction_coef =
           species[iSpecies_].neutral_friction_coef + coef;
         iDir = 2;
-        species[iSpecies_].acc_neutral_friction[iDir] = 
+        species[iSpecies_].acc_neutral_friction[iDir] =
           species[iSpecies_].acc_neutral_friction[iDir] +
           coef % species[iSpecies_].velocity_vcgc[iDir];
       }

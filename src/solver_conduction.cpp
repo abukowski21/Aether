@@ -58,10 +58,10 @@ arma_vec solver_conduction(arma_vec value,
   arma_vec d = -1.0 * (value / m + source % front * dt);
 
   // Lower BCs (fixed value):
-  a(nGCs-1) = 0.0;
-  b(nGCs-1) = -1.0;
-  c(nGCs-1) = 0.0;
-  d(nGCs-1) = -1.0 * value(nGCs-1);
+  a(nGCs - 1) = 0.0;
+  b(nGCs - 1) = -1.0;
+  c(nGCs - 1) = 0.0;
+  d(nGCs - 1) = -1.0 * value(nGCs - 1);
 
   // Upper BCs:
   // This assumes a constant-gradient BC (need to change for ion and ele temps.
@@ -93,12 +93,14 @@ arma_vec solver_conduction(arma_vec value,
 
   if (return_diff) {
     conduction = result - value;
+
     for (i = 0; i < nGCs; i++) {
       conduction(i) = 0.0;
       conduction(nPts - i - 1) = 0.0;
     }
   } else {
     conduction = result;
+
     for (i = 0; i < nGCs; i++) {
       conduction(i) = value(i);
       conduction(nPts - nGCs + i) = conduction(nPts - nGCs - 1);

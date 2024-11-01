@@ -17,7 +17,7 @@ void Neutrals::calc_viscosity() {
   report.enter(function, iFunction);
 
   viscosity_scgc = 0.00013 * sqrt(temperature_scgc %
-				  mean_major_mass_scgc / cKB);
+                                  mean_major_mass_scgc / cKB);
 
   report.exit(function);
   return;
@@ -89,7 +89,7 @@ void Neutrals::calc_concentration() {
     species[iSpecies].mass_concentration_scgc =
       species[iSpecies].mass * species[iSpecies].density_scgc / rho_scgc;
   }
-  
+
   report.exit(function);
   return;
 }
@@ -110,7 +110,7 @@ void Neutrals::calc_density_from_mass_concentration() {
       rho_scgc % species[iSpecies].mass_concentration_scgc /
       species[iSpecies].mass;
   }
-  
+
   report.exit(function);
   return;
 }
@@ -235,47 +235,47 @@ void Neutrals::calc_scale_height(Grid grid) {
   // If we have eddy diffusion, the scale-heights need to be adjusted,
   // since all of the scale heights should be the same in the region
   // where eddy diffusion is dominant.
-/*
-  if (input.get_use_eddy_momentum()) {
-    // We need the mean major mass in the bottom-most cell, which we
-    // assume is the region where the atmosphere is well-mixed:
+  /*
+    if (input.get_use_eddy_momentum()) {
+      // We need the mean major mass in the bottom-most cell, which we
+      // assume is the region where the atmosphere is well-mixed:
 
-    // sum mass densities and densities to calculate mean major mass:
-    precision_t mTotal = 0.0, dTotal = 0.0, mmm;
-    // Need the mass density and the number density in the bottom slice:
-    arma_mat mSlice, dSlice;
+      // sum mass densities and densities to calculate mean major mass:
+      precision_t mTotal = 0.0, dTotal = 0.0, mmm;
+      // Need the mass density and the number density in the bottom slice:
+      arma_mat mSlice, dSlice;
 
-    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-      mSlice =
-        species[iSpecies].mass *
-        species[iSpecies].density_scgc.slice(0);
-      dSlice =
-        species[iSpecies].density_scgc.slice(0);
-      mTotal = mTotal + accu(mSlice);
-      dTotal = dTotal + accu(dSlice);
+      for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+        mSlice =
+          species[iSpecies].mass *
+          species[iSpecies].density_scgc.slice(0);
+        dSlice =
+          species[iSpecies].density_scgc.slice(0);
+        mTotal = mTotal + accu(mSlice);
+        dTotal = dTotal + accu(dSlice);
+      }
+
+      mmm = mTotal / dTotal;
+      mmm = sync_mean_across_all_procs(mmm);
+
+      // bulk scale height, assuming well mixed atmosphere:
+      arma_cube bulkH =
+        cKB * temperature_scgc /
+        (mmm * abs(grid.gravity_mag_scgc));
+
+      // percentage will go from 1 = use bulk scale, to 0 = use individual
+      arma_cube percentage = kappa_eddy_scgc / input.get_eddy_coef();
+      arma_cube one = percentage;
+      one.ones();
+      arma_cube omp = one - percentage;
+
+      for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+        species[iSpecies].scale_height_scgc =
+          omp % species[iSpecies].scale_height_scgc +
+          percentage % bulkH;
+      }
     }
-
-    mmm = mTotal / dTotal;
-    mmm = sync_mean_across_all_procs(mmm);
-
-    // bulk scale height, assuming well mixed atmosphere:
-    arma_cube bulkH =
-      cKB * temperature_scgc /
-      (mmm * abs(grid.gravity_mag_scgc));
-
-    // percentage will go from 1 = use bulk scale, to 0 = use individual
-    arma_cube percentage = kappa_eddy_scgc / input.get_eddy_coef();
-    arma_cube one = percentage;
-    one.ones();
-    arma_cube omp = one - percentage;
-
-    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-      species[iSpecies].scale_height_scgc =
-        omp % species[iSpecies].scale_height_scgc +
-        percentage % bulkH;
-    }
-  }
-*/
+  */
   return;
 }
 
