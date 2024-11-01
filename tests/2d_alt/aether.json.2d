@@ -1,17 +1,38 @@
 
 {
 
-    "GeoBlockSize" : {
-	"nLons" : 50,
-	"nLats" : 50,
-	"nAlts" : 1},
-	
-    "GeoGrid" : {
-	"dAlt"   : 2.0,
-	"IsUniformAlt" : true},    
+    "Ensembles" : {
+        "nMembers" : 1},
+
+    "Debug" : {
+        "iVerbose" : 0,
+        "iFunctionVerbose" : {
+            "Grid::create_altitudes": 0,
+	    "Electrodynamics::update":0},	
+	"TimingPercent" : 1.0,
+        "dt" : 10.0,
+        "check_for_nans" : true
+    },
+
+    "StartTime" : [2011, 3, 20, 12, 0, 0],
+    "EndTime" : [2011, 3, 20, 13, 0, 0],
+
+    "neuGrid" : {
+        "Shape" : "sphere",
+        "nLatsPerBlock" : 50,
+        "nLonsPerBlock" : 50,
+        "nAlts" : 1,
+	"MinAlt" : 100.0},
+
+    "ionGrid" : {
+        "Shape" : "sphere",
+        "nLatsPerBlock" : 50,
+        "nLonsPerBlock" : 44,
+        "nAlts" : 1,
+	"MinAlt" : 100.0},
 
     "Euv" : {
-	"doUse" : false},
+	"doUse" : true},
 	
     "Eddy" : {
 	"UseInEnergy": false,
@@ -24,22 +45,10 @@
 	    "NO_cool" : false,
 	    "O_cool": false } },
 
-    "Ensembles" : {
-	"nMembers" : 1},
-
-    "Debug" : {
-	"iVerbose" : 0,
-        "iFunctionVerbose" : {
-            "Grid::create_altitudes": 0},	
-	"dt" : 10.0,
-	"check_for_nans" : false
-    },
-
-    "EndTime" : [2011, 3, 20, 1, 0, 0],
-
-    "OmniwebFiles" : ["UA/inputs/omni_20110319.txt"],
-
-    "ElectrodynamicsFile" : "UA/inputs/b20110320n_omni.bin",
+    "Electrodynamics" : {
+        "Potential" : "Weimer05",
+        "DiffuseAurora" : "fta",
+        "File": "UA/inputs/b20110320n_omni.bin"},
     
     "Outputs" : {
 	"type" : ["states"],
