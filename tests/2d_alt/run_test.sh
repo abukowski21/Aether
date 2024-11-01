@@ -12,4 +12,4 @@ cp ../aether.json.2d ./aether.json
 cd UA/output
 
 ~/bin/postAether.py -rm
-~/bin/aether_plot.py -var=Temperature_neutral -alt=2 3DALL_20110320_010000.nc
+~/bin/aether_plot_simple.py -var=Temperature_neutral -alt=2 3DALG_20110320_130000.nc
