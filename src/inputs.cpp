@@ -157,8 +157,7 @@ bool Inputs::check_settings(std::string key1)
     isOk = false;
 
   // perturb is non-essential, otherwise print error message
-  if (!isOk && key1 != "Perturb")
-  {
+  if (!isOk && key1 != "Perturb") {
     report.error("Error in setting : " + key1);
     std::cout << "Missing setting called! [" << key1 << "]\n";
   }
@@ -400,10 +399,11 @@ json Inputs::get_setting_json(std::string key1)
 
   if (settings.find(key1) != settings.end())
     value = settings.at(key1);
-  else
-  {
-    isOk = false;
-    report.error("Error in setting : " + key1);
+  else {
+    if (key1 != "Perturb") {
+      isOk = false;
+      report.error("Error in setting : " + key1);
+    }
   }
 
   return value;
@@ -427,8 +427,10 @@ json Inputs::get_setting_json(std::string key1,
     }
   else
   {
-    isOk = false;
-    report.error("Error in setting : " + key1);
+    if (key1 != "Satellites") {
+      isOk = false;
+      report.error("Error in setting : " + key1);
+    }
   }
 
   return value;
