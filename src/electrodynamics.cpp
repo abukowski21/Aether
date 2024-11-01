@@ -148,16 +148,16 @@ bool Electrodynamics::update(Planets planet,
   static int iFunction = -1;
   report.enter(function, iFunction);
 
+  // Default is to set everything to zero:
+  ions.potential_scgc.zeros();
+  ions.eflux.zeros();
+  ions.avee.ones();
+
   if (HaveElectrodynamicsFile  || HaveFortranIe) {
     set_time(time.get_current());
     gGrid.calc_sza(planet, time);
     gGrid.calc_gse(planet, time);
     gGrid.calc_mlt();
-
-    // Default is to set everything to zero:
-    ions.potential_scgc.zeros();
-    ions.eflux.zeros();
-    ions.avee.ones();
 
 #ifdef FORTRAN
 
@@ -181,9 +181,7 @@ bool Electrodynamics::update(Planets planet,
 
       int64_t nZs = gGrid.get_nZ();
       int64_t iZ;
-
       int iError;
-
       for (iZ = 0; iZ < nZs; iZ++) {
         copy_mat_to_array(gGrid.magLocalTime_scgc.slice(iZ), mlt2d, true);
         copy_mat_to_array(gGrid.magLat_scgc.slice(iZ), lat2d, true);
@@ -199,6 +197,10 @@ bool Electrodynamics::update(Planets planet,
           ie_get_electron_diffuse_aurora(eflux2d, avee2d, &iError);
           copy_array_to_mat(avee2d, ions.avee, true);
           copy_array_to_mat(eflux2d, ions.eflux, true);
+          if (report.test_verbose(3)) {
+            std::cout << "I have eflux2d: " << ions.eflux << "\n";
+            std::cout << "I have potential: " <<  ions.potential_scgc.slice(iZ) << "\n";
+          }
         }
       }
     }
