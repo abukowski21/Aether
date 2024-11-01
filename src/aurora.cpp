@@ -144,7 +144,7 @@ void calc_aurora(Grid grid,
   };
 
   static std::vector<std::vector<precision_t>> CiArray;
-  static bool IsFirstTime = 1;
+  static bool IsFirstTime = true;
 
   // ENERGY BINS AND DE (E in eV)
   static precision_t min = 100;
@@ -158,12 +158,11 @@ void calc_aurora(Grid grid,
 
   if (!neutrals.auroraInitialized) {
     // Initialize the aurora using the auroral csv file
+    report.print(1, "Reading aurora file");
     read_aurora(neutrals, ions);
   }
 
   if (IsFirstTime) {
-    // Initialize the aurora using the auroral csv file
-    //read_aurora(neutrals, ions);
 
     precision_t lnE;
 
@@ -192,8 +191,7 @@ void calc_aurora(Grid grid,
 
       CiArray.push_back(Ci);
     }
-
-    IsFirstTime = 0;
+    IsFirstTime = false;
   }
 
   if (report.test_verbose(4))
@@ -225,8 +223,7 @@ void calc_aurora(Grid grid,
   arma_vec diff_energy_flux;
   bool DoDebug = false;
 
-  if (report.test_verbose(4))
-    std::cout << "aurora - starting main loop!\n";
+  report.print(4, "aurora - starting main loop!");
 
   // loop through each altitude and calculate ionization
   for (iLon = 0; iLon < nLons ; iLon++) {
