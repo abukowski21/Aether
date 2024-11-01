@@ -109,7 +109,10 @@ void Electrodynamics::set_all_indices_for_ie(Times time,
   float au = indices.get_index(time_now, iAU_);
   float al = indices.get_index(time_now, iAL_);
 
+  if (imfbz < -1e31) report.error("There doesnt seem to be any IMF Bz!");
+
   if (report.test_verbose(3)) {
+    std::cout << "time now : " << time_now << "\n";
     std::cout << "imf by : " << iBz_ << " " << imfby << "\n";
     std::cout << "imf bz : " << iBz_ << " " << imfbz << "\n";
     std::cout << "sw v : " << iVx_ << " " << swv << "\n";
@@ -147,6 +150,8 @@ bool Electrodynamics::update(Planets planet,
   std::string function = "Electrodynamics::update";
   static int iFunction = -1;
   report.enter(function, iFunction);
+
+  bool didWork = true;
 
   // Default is to set everything to zero:
   ions.potential_scgc.zeros();
@@ -187,20 +192,48 @@ bool Electrodynamics::update(Planets planet,
         copy_mat_to_array(gGrid.magLat_scgc.slice(iZ), lat2d, true);
 
         ie_set_mlts(mlt2d, &iError);
-        ie_set_lats(lat2d, &iError);
-        ie_update_grid(&iError);
-
-        ie_get_potential(pot2d, &iError);
+        if (iError != 0) {
+          didWork = false;
+          report.error("Error in ie_set_mlts");
+        }
+        if (didWork)
+          ie_set_lats(lat2d, &iError);
+        if (iError != 0) {
+          didWork = false;
+          report.error("Error in ie_set_lats");
+        }
+        if (didWork)
+          ie_update_grid(&iError);
+        if (iError != 0) {
+          didWork = false;
+          report.error("Error in ie_update_grid");
+        }
+        if (didWork)
+          ie_get_potential(pot2d, &iError);
+        if (iError != 0) {
+          didWork = false;
+          report.error("Error in ie_get_potential");
+          std::cout << "ie_get_potential iError : " << iError << "\n";
+        }
         copy_array_to_mat(pot2d, ions.potential_scgc.slice(iZ), true);
 
         if (iZ == nZs - 1) {
-          ie_get_electron_diffuse_aurora(eflux2d, avee2d, &iError);
-          copy_array_to_mat(avee2d, ions.avee, true);
-          copy_array_to_mat(eflux2d, ions.eflux, true);
-          if (report.test_verbose(3)) {
-            std::cout << "I have eflux2d: " << ions.eflux << "\n";
-            std::cout << "I have potential: " <<  ions.potential_scgc.slice(iZ) << "\n";
+          if (didWork) {
+            ie_get_electron_diffuse_aurora(eflux2d, avee2d, &iError);
+            if (iError != 0) {
+              didWork = false;
+              report.error("Error in ie_get_electron_diffuse_aurora");
+              std::cout << "ie_get_electron_diffuse_aurora iError : " << iError << "\n";
+            } else {
+              copy_array_to_mat(avee2d, ions.avee, true);
+              copy_array_to_mat(eflux2d, ions.eflux, true);
+              if (report.test_verbose(3)) {
+                std::cout << "I have eflux2d: " << ions.eflux << "\n";
+                std::cout << "I have potential: " <<  ions.potential_scgc.slice(iZ) << "\n";
+              }
+            }
           }
+
         }
       }
     }
@@ -219,7 +252,7 @@ bool Electrodynamics::update(Planets planet,
   }
 
   report.exit(function);
-  return true;
+  return didWork;
 }
 
 // -----------------------------------------------------------------------------
