@@ -26,31 +26,42 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   tmp.lower_bc_density = -1.0;
 
   tmp.density_scgc.set_size(nLons, nLats, nAlts);
+  tmp.density_scgc.ones();
   tmp.newDensity_scgc.set_size(nLons, nLats, nAlts);
+  tmp.newDensity_scgc.ones();
   tmp.velocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
   tmp.newVelocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
-
   for (int iDir = 0; iDir < 3; iDir++) {
     tmp.velocity_vcgc[iDir].zeros();
     tmp.newVelocity_vcgc[iDir].zeros();
   }
 
   tmp.chapman_scgc.set_size(nLons, nLats, nAlts);
+  tmp.chapman_scgc.ones();
   tmp.scale_height_scgc.set_size(nLons, nLats, nAlts);
-  tmp.ionization_scgc.set_size(nLons, nLats, nAlts);
+  tmp.scale_height_scgc.ones();
 
-  tmp.acc_neutral_friction = make_cube_vector(nLons, nLats, nAlts, 3);
-  tmp.neutral_friction_coef.set_size(nLons, nLats, nAlts);
-  tmp.acc_ion_drag = make_cube_vector(nLons, nLats, nAlts, 3);
-  tmp.acc_eddy.set_size(nLons, nLats, nAlts);
+  tmp.ionization_scgc.set_size(nLons, nLats, nAlts);
   tmp.ionization_scgc.zeros();
 
-  tmp.concentration_scgc.set_size(nLons, nLats, nAlts);
-  tmp.mass_concentration_scgc.set_size(nLons, nLats, nAlts);
+  tmp.acc_neutral_friction = make_cube_vector(nLons, nLats, nAlts, 3);
+  tmp.acc_ion_drag = make_cube_vector(nLons, nLats, nAlts, 3);
+  for (int iDir = 0; iDir < 3; iDir++) {
+    tmp.acc_neutral_friction[iDir].zeros();
+    tmp.acc_ion_drag[iDir].zeros();
+  }
 
-  tmp.density_scgc.ones();
-  tmp.chapman_scgc.ones();
-  tmp.scale_height_scgc.ones();
+  tmp.acc_eddy.set_size(nLons, nLats, nAlts);
+  tmp.acc_eddy.zeros();
+
+  tmp.neutral_friction_coef.set_size(nLons, nLats, nAlts);
+  tmp.neutral_friction_coef.zeros();
+  tmp.concentration_scgc.set_size(nLons, nLats, nAlts);
+  tmp.concentration_scgc.zeros();
+  tmp.mass_concentration_scgc.set_size(nLons, nLats, nAlts);
+  tmp.mass_concentration_scgc.zeros();
+
+  tmp.rho_alt_int_scgc.set_size(nLons, nLats, nAlts);
   tmp.rho_alt_int_scgc.zeros();
 
   tmp.sources_scgc.set_size(nLons, nLats, nAlts);
@@ -59,7 +70,7 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   tmp.losses_scgc.zeros();
 
   tmp.nAuroraIonSpecies = 0;
-  tmp.Aurora_Coef = -1.0;
+  tmp.Aurora_Coef = 0.0;
 
   return tmp;
 }
