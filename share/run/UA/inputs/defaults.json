@@ -121,7 +121,7 @@
     "AuroraFile" : "UA/inputs/aurora_earth.csv",
     "IndicesLookupFile" : "UA/inputs/indices_lookup.json",
 
-    "OnmiwebFile" : [""],
+    "OmniwebFile" : ["UA/inputs/omni_20110319.txt"],
     
     "Logfile" : {
 	"name" : ["UA/output/log_geo.txt", "UA/output/log_mag.txt"],
