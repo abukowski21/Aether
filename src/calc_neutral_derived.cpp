@@ -559,7 +559,7 @@ void Neutrals::calc_chapman(Grid grid) {
     xp3d = grid.radius_scgc / species[iSpecies].scale_height_scgc;
     y3d = sqrt(0.5 * xp3d) % abs(grid.cos_sza_scgc);
 
-    integral3d.fill(0.0);
+    integral3d.fill(1.0);
     iAlt = nAlts - 1;
     integral3d.slice(iAlt) =
       species[iSpecies].density_scgc.slice(iAlt) %
