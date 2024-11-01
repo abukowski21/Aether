@@ -8,7 +8,9 @@
         "iVerbose" : 0,
         "iFunctionVerbose" : {
             "Grid::create_altitudes": 0,
-	    "Electrodynamics::update":0},	
+	    "Electrodynamics::update":0,
+	    "Electrodynamics::set_all_indices_for_ie" : 0,
+	    "read_and_store_indices": 0},	
 	"TimingPercent" : 1.0,
         "dt" : 10.0,
         "check_for_nans" : true
@@ -19,15 +21,15 @@
 
     "neuGrid" : {
         "Shape" : "sphere",
-        "nLatsPerBlock" : 50,
-        "nLonsPerBlock" : 50,
+        "nLatsPerBlock" : 36,
+        "nLonsPerBlock" : 72,
         "nAlts" : 1,
 	"MinAlt" : 100.0},
 
     "ionGrid" : {
         "Shape" : "sphere",
-        "nLatsPerBlock" : 50,
-        "nLonsPerBlock" : 44,
+        "nLatsPerBlock" : 36,
+        "nLonsPerBlock" : 72,
         "nAlts" : 1,
 	"MinAlt" : 100.0},
 
@@ -49,6 +51,8 @@
         "Potential" : "Weimer05",
         "DiffuseAurora" : "fta",
         "File": "UA/inputs/b20110320n_omni.bin"},
+
+    "OmniwebFiles" : ["UA/inputs/omni_20110319.txt"],
     
     "Outputs" : {
 	"type" : ["states"],
