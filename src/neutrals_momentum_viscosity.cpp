@@ -55,33 +55,33 @@ void Neutrals::update_horizontal_velocity(Grid grid, Times time) {
     //  std::cout << "  -> temp before: ";
     //  display_vector(temperature_scgc.tube(11,2));
     //}
-    
+
     for (iDir = 0; iDir < 2; iDir++) {
       for (iLon = 0; iLon < nLons; iLon++) {
-	for (iLat = 0; iLat < nLats; iLat++) {
+        for (iLat = 0; iLat < nLats; iLat++) {
 
-	  vel1d = velocity_vcgc[iDir].tube(iLon, iLat);
-	  lambda1d = lambda3d.tube(iLon, iLat);
-	  rhor21d = rhor23d.tube(iLon, iLat);
-	  sources1d.zeros();
-	  dalt1d = grid.dalt_lower_scgc.tube(iLon, iLat);
-	  visc1d.zeros();
+          vel1d = velocity_vcgc[iDir].tube(iLon, iLat);
+          lambda1d = lambda3d.tube(iLon, iLat);
+          rhor21d = rhor23d.tube(iLon, iLat);
+          sources1d.zeros();
+          dalt1d = grid.dalt_lower_scgc.tube(iLon, iLat);
+          visc1d.zeros();
 
-	  visc1d = solver_conduction(vel1d,
-				     lambda1d,
-				     rhor21d,
-				     sources1d,
-				     dalt1d,
-				     dt,
-				     nGCs,
-				     false);
-	  velocity_vcgc[iDir].tube(iLon, iLat) = visc1d;
+          visc1d = solver_conduction(vel1d,
+                                     lambda1d,
+                                     rhor21d,
+                                     sources1d,
+                                     dalt1d,
+                                     dt,
+                                     nGCs,
+                                     false);
+          velocity_vcgc[iDir].tube(iLon, iLat) = visc1d;
 
-	  // Store the difference (as a rate), so we can output it later
-	  // if we want:
-	  //conduction_scgc.tube(iLon, iLat) =
-	  //  (conduction1d - temp1d)/dt - sources1d;
-	}  // lat
+          // Store the difference (as a rate), so we can output it later
+          // if we want:
+          //conduction_scgc.tube(iLon, iLat) =
+          //  (conduction1d - temp1d)/dt - sources1d;
+        }  // lat
       }  // lon
     }
 
@@ -89,7 +89,7 @@ void Neutrals::update_horizontal_velocity(Grid grid, Times time) {
     //  std::cout << "  -> temp after: ";
     //  display_vector(temperature_scgc.tube(11,2));
     //}
-    
+
   } // if nAlts == 1 + 2*GCs
 
   report.exit(function);

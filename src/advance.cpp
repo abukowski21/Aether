@@ -56,7 +56,7 @@ bool advance(Planets &planet,
   neutrals.calc_bulk_velocity();
   neutrals.calc_kappa_eddy();
   neutrals.calc_viscosity();
-  //neutrals.calc_cMax();
+  neutrals.calc_cMax();
 
   ions.fill_electrons();
   ions.calc_sound_speed();
@@ -65,7 +65,7 @@ bool advance(Planets &planet,
   precision_t dtNeutral = calc_dt(gGrid, neutrals.cMax_vcgc);
   precision_t dtIon = calc_dt(gGrid, ions.cMax_vcgc);
   time.calc_dt(dtNeutral, dtIon);
-  
+
   neutralsMag.calc_mass_density();
   neutralsMag.calc_mean_major_mass();
   neutralsMag.calc_specific_heat();
@@ -85,9 +85,11 @@ bool advance(Planets &planet,
   neutralsMag.calc_scale_height(mGrid);
 
   if (didWork)
-    didWork = neutrals.set_bcs(gGrid, time, indices); 
+    didWork = neutrals.set_bcs(gGrid, time, indices);
+
   if (didWork)
     didWork = ions.set_bcs(gGrid, time, indices);
+
   if (didWork)
     didWork = neutralsMag.set_bcs(mGrid, time, indices);
 
@@ -95,11 +97,11 @@ bool advance(Planets &planet,
     neutrals.advect_vertical(gGrid, time);
 
   neutrals.exchange_old(gGrid);
-  //advect(gGrid, time, neutrals);
+  advect(gGrid, time, neutrals);
 
   if (didWork & input.get_check_for_nans())
     didWork = neutrals.check_for_nonfinites("After Horizontal Advection");
-  
+
   // ------------------------------------
   // Calculate source terms next:
 
@@ -111,6 +113,7 @@ bool advance(Planets &planet,
                        neutrals,
                        ions,
                        indices);
+
   if (didWork)
     didWork = calc_euv(planet,
                        mGrid,
@@ -126,6 +129,7 @@ bool advance(Planets &planet,
                                      time,
                                      indices,
                                      ions);
+
   if (didWork)
     didWork = electrodynamics.update(planet,
                                      mGrid,
@@ -154,8 +158,10 @@ bool advance(Planets &planet,
     calc_ion_collisions(neutrals, ions);
 
     neutrals.add_sources(time, planet, gGrid);
+
     if (didWork & input.get_check_for_nans())
       didWork = neutrals.check_for_nonfinites("After Add Sources");
+
     neutralsMag.add_sources(time, planet, mGrid);
 
     ions.calc_ion_temperature(neutrals, gGrid, time);
@@ -180,11 +186,13 @@ bool advance(Planets &planet,
 
   if (didWork)
     didWork = output(neutrals, ions, gGrid, time, planet);
+
   if (didWork)
     didWork = output(neutralsMag, ionsMag, mGrid, time, planet);
 
   if (didWork)
     didWork = logfile.write_logfile(indices, neutrals, ions, gGrid, time);
+
   if (didWork)
     didWork = logfileMag.write_logfile(indices, neutralsMag, ionsMag, mGrid, time);
 

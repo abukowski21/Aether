@@ -64,19 +64,19 @@ void Neutrals::update_temperature(Grid grid, Times time) {
         conduction1d.zeros();
 
         conduction1d = solver_conduction(temp1d,
-					 lambda1d,
-					 rhocvr21d,
-					 sources1d,
-					 dalt1d,
-					 dt,
-					 nGCs,
-					 false);
+                                         lambda1d,
+                                         rhocvr21d,
+                                         sources1d,
+                                         dalt1d,
+                                         dt,
+                                         nGCs,
+                                         false);
         temperature_scgc.tube(iLon, iLat) = conduction1d;
 
         // Store the difference (as a rate), so we can output it later
         // if we want:
         conduction_scgc.tube(iLon, iLat) =
-	  (conduction1d - temp1d)/dt - sources1d;
+          (conduction1d - temp1d) / dt - sources1d;
       }  // lat
     }  // lon
 

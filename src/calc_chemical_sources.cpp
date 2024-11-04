@@ -123,8 +123,10 @@ void Chemistry::calc_chemical_sources(Neutrals &neutrals,
         temp = ions.electron_temperature_scgc;
       else if (piecewiseTemp == "Tn")
         temp = neutrals.temperature_scgc;
+
       // zero out the rate when it is outside of the temperature bounds:
       change3d.elem( find(temp < reactions[iReaction].min) ).zeros();
+
       if (reactions[iReaction].max > 0)
         change3d.elem( find(temp > reactions[iReaction].max) ).zeros();
     }

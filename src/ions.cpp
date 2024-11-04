@@ -265,10 +265,12 @@ void Ions::calc_sound_speed() {
   report.enter(function, iFunction);
 
   gamma_scgc.zeros();
+
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     gamma_scgc = gamma_scgc +
                  species[iSpecies].density_scgc / (species[iSpecies].vibe - 2);
   }
+
   gamma_scgc = gamma_scgc * 2.0 / density_scgc + 1.0;
 
   sound_scgc = sqrt(cKB *
@@ -279,6 +281,7 @@ void Ions::calc_sound_speed() {
   if (report.test_verbose(2)) {
     std::cout << "max sound speed : " << sound_scgc.max() << "\n";
     std::cout << "max gamma : " << gamma_scgc.max() << "\n";
+
     if (!all_finite(sound_scgc, "sound speed")) {
       std::cout << "sound speed has nans!\n";
       report.report_errors();
@@ -340,9 +343,10 @@ void Ions::fill_electrons() {
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     species[nSpecies].density_scgc =
       species[nSpecies].density_scgc + species[iSpecies].density_scgc;
-    rho_scgc = rho_scgc + 
-      species[iSpecies].mass * species[iSpecies].density_scgc;
+    rho_scgc = rho_scgc +
+               species[iSpecies].mass * species[iSpecies].density_scgc;
   }
+
   density_scgc = species[nSpecies].density_scgc;
   mean_major_mass_scgc = rho_scgc / density_scgc;
 

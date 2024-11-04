@@ -76,7 +76,7 @@ void calc_facevalues_alts_rusanov(Grid &grid,
     for (iY = nGCs; iY < nYs - nGCs; iY++)
       dVarLimited(iX, iY, iZ) =
         limiter_mc(dVarUp(iX, iY), dVarDown(iX, iY), beta);
-    
+
   for (iZ = nGCs; iZ < nZs - nGCs + 1; iZ++) {
     outLeft.slice(iZ) =
       inVar.slice(iZ - 1) +
@@ -85,23 +85,24 @@ void calc_facevalues_alts_rusanov(Grid &grid,
       inVar.slice(iZ) -
       0.5 * dVarLimited.slice(iZ) % grid.dalt_lower_scgc.slice(iZ);
   }
+
   /*
   if (iProc == 11)
     std::cout << "facevalues : "
-	      << inVar(7,19,17) << " "
-	      << inVar(7,19,18) << " "
-	      << inVar(7,19,19) << " "
-	      << inVar(7,19,20) << " "
-	      << dVarLimited(7,19,18) << " "
-	      << grid.dalt_lower_scgc(7,19,17) << " "
-	      << outRight(7, 19, 17) << " "
-	      << outRight(7, 19, 18) << " "
-	      << outLeft(7, 19, 17) << " "
-	      << outLeft(7, 19, 18) << " "
-	      << dVarUp(7, 19) << " "
-	      << dVarDown(7, 19) << "\n";
+        << inVar(7,19,17) << " "
+        << inVar(7,19,18) << " "
+        << inVar(7,19,19) << " "
+        << inVar(7,19,20) << " "
+        << dVarLimited(7,19,18) << " "
+        << grid.dalt_lower_scgc(7,19,17) << " "
+        << outRight(7, 19, 17) << " "
+        << outRight(7, 19, 18) << " "
+        << outLeft(7, 19, 17) << " "
+        << outLeft(7, 19, 18) << " "
+        << dVarUp(7, 19) << " "
+        << dVarDown(7, 19) << "\n";
   */
-  
+
   return;
 }
 
@@ -142,15 +143,16 @@ void calc_grad_and_diff_alts_rusanov(Grid &grid,
                         (varLeft.slice(iZ + 1) + varRight.slice(iZ + 1) -
                          varLeft.slice(iZ) - varRight.slice(iZ)) /
                         grid.dalt_center_scgc.slice(iZ);
+
   /*
   if (iProc == 11)
     std::cout << "calc_grad : "
-	      << varLeft(7, 19, 17) << " "
-	      << varLeft(7, 19, 18) << " "
-	      << varRight(7, 19, 17) << " "
-	      << varRight(7, 19, 18) << " "
-	      << grid.dalt_center_scgc(7, 19, 17) << " "
-	      << outGrad(7, 19, 17) << "\n";
+        << varLeft(7, 19, 17) << " "
+        << varLeft(7, 19, 18) << " "
+        << varRight(7, 19, 17) << " "
+        << varRight(7, 19, 18) << " "
+        << grid.dalt_center_scgc(7, 19, 17) << " "
+        << outGrad(7, 19, 17) << "\n";
   */
   for (iZ = nGCs; iZ < nZs - nGCs + 1; iZ++) {
     for (iX = nGCs; iX < nXs - nGCs; iX++)
@@ -252,20 +254,7 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
                                       cMax_vcgc[2],
                                       gradDummy,
                                       diffDummy);
-      /*
-      if (iProc == 11) 
-	std::cout << "gradlog : "
-		  << iSpecies << " "
-		  << species[iSpecies].density_scgc(7,19,17) << " "
-		  << log_s(7,19,14) << " "
-		  << log_s(7,19,15) << " "
-		  << log_s(7,19,16) << " "
-		  << log_s(7,19,17) << " "
-		  << log_s(7,19,18) << " "
-		  << log_s(7,19,19) << " "
-		  << cMax_vcgc[2](7,19,17) << " "
-		  << gradDummy(7,19,17) << "\n";
-      */
+
       gradLogN_s[iSpecies] = gradDummy;
       diffLogN_s[iSpecies] = diffDummy;
 
@@ -295,6 +284,11 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
   // calculate vertical momentum due to eddy diffusion:
   vertical_momentum_eddy(grid);
 
+  bool useImplicitFriction = input.get_advection_neutrals_implicitfriction();
+
+  if (useImplicitFriction)
+    calc_neutral_friction_coefs();
+
   // -----------------------------------------------------------
   // Now calculate new states:
   precision_t mass;
@@ -302,6 +296,8 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
   one.ones();
   arma_cube gmo(nXs, nYs, nZs);
   gmo = gamma_scgc - one;
+
+  arma_cube accTotal(nXs, nYs, nZs);
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     if (species[iSpecies].DoAdvect) {
@@ -316,43 +312,35 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
         + dt * diffLogN_s[iSpecies];
       species[iSpecies].newDensity_scgc = exp(log_s);
 
+      accTotal =
+        dt * grid.gravity_vcgc[2]
+        - dt * temperature_scgc % gradLogN_s[iSpecies] * cKB / mass
+        + dt * diffVertVel_s[iSpecies]
+        - dt * species[iSpecies].velocity_vcgc[2] % gradVertVel_s[iSpecies]
+        + dt * v2or
+        + dt * species[iSpecies].acc_eddy
+        + dt * acc_coriolis[2]
+        + dt * grid.cent_acc_vcgc[2];
+
       // vertical velocities:
-      species[iSpecies].newVelocity_vcgc[2] =
-        species[iSpecies].velocity_vcgc[2]
-        - dt * (species[iSpecies].velocity_vcgc[2] % gradVertVel_s[iSpecies]
-                - v2or
-                - species[iSpecies].acc_eddy
-                - acc_coriolis[2]
-                - grid.cent_acc_vcgc[2]
-                + 1.0 * (temperature_scgc % gradLogN_s[iSpecies] * cKB / mass
-                         + gradTemp * cKB / mass
-                         + abs(grid.gravity_vcgc[2])))
-        + dt * diffVertVel_s[iSpecies];
-      /*
-      if (iProc == 11) {
-	std::cout << "den + vel : "
-		  << iSpecies << " "
-		  << species[iSpecies].density_scgc(7,19,17) << " "
-		  << log_s(7,19,17) << " "
-		  << species[iSpecies].velocity_vcgc[2](7,19,17) << " "
-		  << species[iSpecies].newVelocity_vcgc[2](7,19,17) << " "
-		  << species[iSpecies].acc_eddy(7,19,17) << " "
-		  << velocity_vcgc[0](7,19,17) << " "
-		  << velocity_vcgc[1](7,19,17) << " "
-		  << cMax_vcgc[0](7,19,17) << " "
-		  << cMax_vcgc[1](7,19,17) << " "
-		  << cMax_vcgc[2](7,19,17) << " "
-		  << gradLogN_s[iSpecies](7,19,17) << " "
-		  << temperature_scgc(7,19,17) << " "
-		  << gradTemp(7,19,17) << " "
-		  << diffVertVel_s[iSpecies](7,19,17) << " "
-		  << v2or(7,19,17) << "\n";
-		  }	  */
+      if (useImplicitFriction) {
+        species[iSpecies].newVelocity_vcgc[2] =
+          (species[iSpecies].velocity_vcgc[2] + accTotal +
+           dt * species[iSpecies].acc_neutral_friction[2]) /
+          (1.0 + dt * species[iSpecies].neutral_friction_coef);
+      } else {
+        species[iSpecies].newVelocity_vcgc[2] =
+          (species[iSpecies].velocity_vcgc[2] + accTotal);
+      }
+
     } else {
       species[iSpecies].newVelocity_vcgc[2].zeros();
       species[iSpecies].newDensity_scgc = species[iSpecies].density_scgc;
     }
   }
+
+  if (!useImplicitFriction)
+    calc_neutral_friction_implicit(dt);
 
   newTemperature_scgc =
     temperature_scgc
@@ -360,21 +348,13 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
             + gmo % (temperature_scgc % divBulkVertVel))
     + dt * diffTemp;
 
-/*
-  if (iProc == 11)
-    std::cout << "temp : "
-	      << temperature_scgc(7,19,17) << " "
-	      << newTemperature_scgc(7,19,17) << " "
-	      << velocity_vcgc[2](7,19,17) << " "
-	      << gradTemp(7,19,17) << " "
-	      << gmo(7,19,17) << " "
-	      << divBulkVertVel(7,19,17) << " "
-	      << diffTemp(7,19,17) << "\n";
-*/
+  precision_t maxVerticalVelocity = 100.0;
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     if (species[iSpecies].DoAdvect)
-      species[iSpecies].newVelocity_vcgc[2].clamp(-200,200);
+      species[iSpecies].newVelocity_vcgc[2].clamp(-maxVerticalVelocity,
+                                                  maxVerticalVelocity);
+
   newTemperature_scgc.clamp(150, 1e32);
 
   for (iX = nGCs; iX < nXs - nGCs; iX++)
@@ -396,51 +376,45 @@ void Neutrals::solver_vertical_rusanov(Grid grid,
         }
       }
 
-iX = 2;
-iY = 4;
-  // Force the neutrals to move together with friction:
-  iSpecies = 3;
-  std::cout << "ver sol, before friction: " 
-    << species[iSpecies].velocity_vcgc[2](iX,iY,1) << " "
-    << species[iSpecies].velocity_vcgc[2](iX,iY,2) << " "
-    << species[iSpecies].velocity_vcgc[2](iX,iY,3) << " "
-    << species[iSpecies].velocity_vcgc[2](iX,iY,4) << "\n";
+  bool doPrintThis = false;
 
-  mass = species[iSpecies].mass;
+  if (doPrintThis) {
+    iX = 2;
+    iY = 2;
+    iSpecies = 4;
+    mass = species[iSpecies].mass;
 
-  for (int iAlt = 0; iAlt < 20; iAlt++) {
-    std::cout << iAlt << " " 
-    << log(species[iSpecies].density_scgc(iX, iY,iAlt)) << " "
-    << temperature_scgc(iX,iY,iAlt) << " "
-      << species[iSpecies].velocity_vcgc[2](iX,iY,iAlt) << " "
-      << temperature_scgc(10,10,iAlt) * gradLogN_s[iSpecies](iX,iY,iAlt) * cKB / mass << " "
-      << gradTemp(iX,iY,iAlt) * cKB / mass << " "
-      << abs(grid.gravity_vcgc[2](iX,iY,iAlt)) << "\n";
-  }
-
-  calc_neutral_friction();
-  std::cout << "ver acc, after friction: " 
-    << species[iSpecies].acc_neutral_friction[2](iX,iY,1) << " "
-    << species[iSpecies].acc_neutral_friction[2](iX,iY,2) << " "
-    << species[iSpecies].acc_neutral_friction[2](iX,iY,3) << " "
-    << species[iSpecies].acc_neutral_friction[2](iX,iY,4) << "\n";
-  
-  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
-    if (species[iSpecies].DoAdvect) {
-        species[iSpecies].velocity_vcgc[2] = 
-          species[iSpecies].velocity_vcgc[2] + dt * 
-          species[iSpecies].acc_neutral_friction[2];
+    for (int iAlt = 0; iAlt < 20; iAlt++) {
+      std::cout << iAlt << " "
+                << log(species[iSpecies].density_scgc(iX, iY, iAlt)) << " "
+                << temperature_scgc(iX, iY, iAlt) << " "
+                << species[iSpecies].velocity_vcgc[2](iX, iY, iAlt) << " "
+                << temperature_scgc(iX, iY, iAlt) * gradLogN_s[iSpecies](iX, iY,
+                    iAlt) * cKB / mass << " "
+                << gradTemp(iX, iY, iAlt) * cKB / mass << " "
+                << grid.gravity_vcgc[2](iX, iY, iAlt) << "\n";
     }
   }
-  std::cout << "here\n";
+
+  //calc_neutral_friction();
+  /*
+    for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+      if (species[iSpecies].DoAdvect) {
+          species[iSpecies].velocity_vcgc[2] =
+            species[iSpecies].velocity_vcgc[2] + dt *
+            species[iSpecies].acc_neutral_friction[2];
+      }
+    }
+  */
   calc_mass_density();
   // Calculate bulk vertical winds:
   velocity_vcgc[2].zeros();
+
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
     if (species[iSpecies].DoAdvect) {
-      velocity_vcgc[2] = velocity_vcgc[2] + 
-        species[iSpecies].mass * species[iSpecies].density_scgc % 
-        species[iSpecies].velocity_vcgc[2] / rho_scgc;
+      velocity_vcgc[2] = velocity_vcgc[2] +
+                         species[iSpecies].mass * species[iSpecies].density_scgc %
+                         species[iSpecies].velocity_vcgc[2] / rho_scgc;
     }
 
   report.exit(function);
@@ -453,7 +427,7 @@ iY = 4;
 // --------------------------------------------------------------------------
 
 void Ions::solver_vertical_rusanov(Grid grid,
-                                  Times time) {
+                                   Times time) {
 
   std::string function = "Ions::solver_vertical_rusanov";
   static int iFunction = -1;
@@ -530,13 +504,12 @@ void Ions::solver_vertical_rusanov(Grid grid,
         + dt * diffLogN_s[iSpecies];
       species[iSpecies].newDensity_scgc = exp(log_s);
 
-    } else {
+    } else
       species[iSpecies].newDensity_scgc = species[iSpecies].density_scgc;
-    }
   }
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++)
-    if (species[iSpecies].DoAdvect) 
+    if (species[iSpecies].DoAdvect)
       species[iSpecies].density_scgc = species[iSpecies].newDensity_scgc;
 
   fill_electrons();

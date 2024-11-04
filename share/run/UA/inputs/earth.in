@@ -28,10 +28,10 @@ BC is a density that is used in the lowest boundary cell if you
 
 #NEUTRALS
 name, mass, vibration, thermal_cond, thermal_exp, advect, BC
-O, 16, 5, 5.6e-4, 0.69, 1, 5.0e17
+O, 16, 5, 5.6e-4, 0.69, 1, 7.0e17
 N, 14, 5, 5.6e-4, 0.69, 1, 2.5e11
-O2, 32, 7, 3.6e-4, 0.69, 1, 4.0e18
-N2, 28, 7, 3.6e-4, 0.69, 1, 1.7e19
+O2, 32, 7, 3.6e-4, 0.69, 1, 2.0e18
+N2, 28, 7, 3.6e-4, 0.69, 1, 1.0e19
 NO, 30, 7, 3.6e-4, 0.69, 1, 5.4e14
 He, 4, 5, 5.6e-4, 0.69, 1, 1.5e14
 N_2D, 14, 5, 5.6e-4, 0.69, 0, 2.5e9

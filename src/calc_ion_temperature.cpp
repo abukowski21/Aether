@@ -60,12 +60,13 @@ void Ions::calc_ion_temperature(Neutrals neutrals, Grid grid,
   // Get the time step size
   precision_t dt = time.get_dt();
 
-  temperature_scgc = 200.0 + sqrt(grid.geoAlt_scgc/1000.0 - 90.0) * 60.0;
+  temperature_scgc = 200.0 + sqrt(grid.geoAlt_scgc / 1000.0 - 90.0) * 60.0;
 
   for (iIon = 0; iIon < nSpecies; iIon++)
     species[iIon].temperature_scgc = temperature_scgc;
-    //species[iIon].temperature_scgc = neutrals.temperature_scgc;
-  
+
+  //species[iIon].temperature_scgc = neutrals.temperature_scgc;
+
   report.exit(function);
   return;
 
@@ -100,7 +101,8 @@ void Ions::calc_ion_temperature(Neutrals neutrals, Grid grid,
 
         conduction1d.zeros();    // reset temp variable to zero
 
-        conduction1d = solver_conduction(temp1d, lambda1d, front1d, sources1d, dalt1d, dt, nGCs, true);
+        conduction1d = solver_conduction(temp1d, lambda1d, front1d, sources1d, dalt1d,
+                                         dt, nGCs, true);
 
         // The conduction solver gives Tnew-Told, so divide by dt
         conduction_scgc.tube(iLon, iLat) = conduction1d / dt;

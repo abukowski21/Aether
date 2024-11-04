@@ -161,7 +161,7 @@ bool OutputContainer::read_container_netcdf() {
 bool OutputContainer::write_container_netcdf() {
 
   bool didWork = true;
-  std::string whole_filename = directory+ filename + ".nc";
+  std::string whole_filename = directory + filename + ".nc";
   std::string UNITS = "units";
   std::string LONG_NAME = "long_name";
 

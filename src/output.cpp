@@ -43,7 +43,7 @@ std::string get_filename_from_type(std::string type_output) {
 
   return filename;
 
-} 
+}
 
 // -----------------------------------------------------------------------------
 //  Fills output containers and outputs them for common output types

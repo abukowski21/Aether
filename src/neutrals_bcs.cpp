@@ -204,26 +204,30 @@ bool Neutrals::set_lower_bcs(Grid grid,
     temperature_scgc.slice(iAlt) = temperature_scgc.slice(iAlt + 1);
 
   arma_mat sh_ave;
+
   // fill the lower ghost cells with a hydrostatic solution:
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     for (iAlt = nGCs - 2; iAlt >= 0; iAlt--) {
-      sh_ave = 
-        (species[iSpecies].scale_height_scgc.slice(iAlt) + 
-         species[iSpecies].scale_height_scgc.slice(iAlt + 1))/2;
+      sh_ave =
+        (species[iSpecies].scale_height_scgc.slice(iAlt) +
+         species[iSpecies].scale_height_scgc.slice(iAlt + 1)) / 2;
 
-      species[iSpecies].density_scgc.slice(iAlt) = 
+      species[iSpecies].density_scgc.slice(iAlt) =
         temperature_scgc.slice(iAlt + 1) /
         temperature_scgc.slice(iAlt) %
         species[iSpecies].density_scgc.slice(iAlt + 1) %
         exp(grid.dalt_lower_scgc.slice(iAlt) / sh_ave);
     }
+
     for (iAlt = nGCs - 1; iAlt >= 0; iAlt--) {
       //std::cout << "before project : " << iAlt << " " << iSpecies << " "
       //  << species[iSpecies].velocity_vcgc[2](10,10,2) << "\n";
-      species[iSpecies].velocity_vcgc[2].slice(iAlt) = 
-        project_onesided_alt_3rd(species[iSpecies].velocity_vcgc[2], grid, iAlt);
+      species[iSpecies].velocity_vcgc[2].slice(iAlt) =
+        species[iSpecies].velocity_vcgc[2].slice(iAlt + 1);
+      //project_onesided_alt_3rd(species[iSpecies].velocity_vcgc[2], grid, iAlt);
     }
   }
+
   // Force vertical velocities to be zero in the ghost cells:
   for (iDir = 0; iDir < 2; iDir++) {
     for (iAlt = 0; iAlt < nGCs; iAlt++) {

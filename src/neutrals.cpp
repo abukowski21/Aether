@@ -26,7 +26,9 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   tmp.lower_bc_density = -1.0;
 
   tmp.density_scgc.set_size(nLons, nLats, nAlts);
+  tmp.density_scgc.ones();
   tmp.newDensity_scgc.set_size(nLons, nLats, nAlts);
+  tmp.newDensity_scgc.ones();
   tmp.velocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
   tmp.newVelocity_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
 
@@ -36,20 +38,32 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   }
 
   tmp.chapman_scgc.set_size(nLons, nLats, nAlts);
+  tmp.chapman_scgc.ones();
   tmp.scale_height_scgc.set_size(nLons, nLats, nAlts);
+  tmp.scale_height_scgc.ones();
+
   tmp.ionization_scgc.set_size(nLons, nLats, nAlts);
+  tmp.ionization_scgc.zeros();
 
   tmp.acc_neutral_friction = make_cube_vector(nLons, nLats, nAlts, 3);
   tmp.acc_ion_drag = make_cube_vector(nLons, nLats, nAlts, 3);
+
+  for (int iDir = 0; iDir < 3; iDir++) {
+    tmp.acc_neutral_friction[iDir].zeros();
+    tmp.acc_ion_drag[iDir].zeros();
+  }
+
   tmp.acc_eddy.set_size(nLons, nLats, nAlts);
-  tmp.ionization_scgc.zeros();
+  tmp.acc_eddy.zeros();
 
+  tmp.neutral_friction_coef.set_size(nLons, nLats, nAlts);
+  tmp.neutral_friction_coef.zeros();
   tmp.concentration_scgc.set_size(nLons, nLats, nAlts);
+  tmp.concentration_scgc.zeros();
   tmp.mass_concentration_scgc.set_size(nLons, nLats, nAlts);
+  tmp.mass_concentration_scgc.zeros();
 
-  tmp.density_scgc.ones();
-  tmp.chapman_scgc.ones();
-  tmp.scale_height_scgc.ones();
+  tmp.rho_alt_int_scgc.set_size(nLons, nLats, nAlts);
   tmp.rho_alt_int_scgc.zeros();
 
   tmp.sources_scgc.set_size(nLons, nLats, nAlts);
@@ -58,7 +72,7 @@ Neutrals::species_chars Neutrals::create_species(Grid grid) {
   tmp.losses_scgc.zeros();
 
   tmp.nAuroraIonSpecies = 0;
-  tmp.Aurora_Coef = -1.0;
+  tmp.Aurora_Coef = 0.0;
 
   return tmp;
 }
@@ -144,7 +158,7 @@ Neutrals::Neutrals(Grid grid,
   heating_ion_friction_scgc.set_size(nLons, nLats, nAlts);
   heating_ion_friction_scgc.zeros();
   heating_ion_heat_transfer_scgc.set_size(nLons, nLats, nAlts);
-  heating_ion_heat_transfer_scgc.zeros();  
+  heating_ion_heat_transfer_scgc.zeros();
   O_cool_scgc.set_size(nLons, nLats, nAlts);
   O_cool_scgc.zeros();
   NO_cool_scgc.set_size(nLons, nLats, nAlts);
@@ -156,7 +170,7 @@ Neutrals::Neutrals(Grid grid,
   acc_ion_collisions = make_cube_vector(nLons, nLats, nAlts, 3);
   // bulk coriolis acceleration:
   acc_coriolis = make_cube_vector(nLons, nLats, nAlts, 3);
-  
+
   // bulk ion_neutral collisional acceleration:
   acc_sources_total = make_cube_vector(nLons, nLats, nAlts, 3);
 
@@ -233,8 +247,10 @@ void Neutrals::fill_with_hydrostatic(int64_t iStart,
                                      Grid grid) {
 
   int64_t iNeutral, iSpecies;
+
   for (iNeutral = 0; iNeutral < nSpeciesAdvect; iNeutral++) {
     iSpecies = species_to_advect[iNeutral];
+
     // Integrate with hydrostatic equilibrium up:
     for (int iAlt = iStart; iAlt < iEnd; iAlt++) {
       species[iSpecies].density_scgc.slice(iAlt) =
@@ -315,6 +331,7 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   bool didWork = true;
 
   isBad = !all_finite(density_scgc, "density_scgc");
+
   if (isBad) {
     report.error("non-finite found in neutral density!");
     report.error("from location : " + location);
@@ -322,18 +339,21 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   }
 
   int64_t iSpecies;
+
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     isBad = !all_finite(species[iSpecies].density_scgc,
-			species[iSpecies].cName + " density");
+                        species[iSpecies].cName + " density");
+
     if (isBad) {
       report.error("non-finite found in " +
-		   species[iSpecies].cName + " density!");
+                   species[iSpecies].cName + " density!");
       report.error("from location : " + location);
       didWork = false;
     }
   }
-  
+
   isBad = !all_finite(temperature_scgc, "temperature_scgc");
+
   if (isBad) {
     report.error("non-finite found in neutral temperature!");
     report.error("from location : " + location);
@@ -341,24 +361,27 @@ bool Neutrals::check_for_nonfinites(std::string location) {
   }
 
   isBad = !all_finite(velocity_vcgc, "velocity_vcgc");
+
   if (isBad) {
     report.error("non-finite found in neutral velocity!");
     report.error("from location : " + location);
     didWork = false;
   }
+
   didWork = sync_across_all_procs(didWork);
 
   for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
     isBad = !all_finite(species[iSpecies].velocity_vcgc,
-			species[iSpecies].cName + " velocity!");
+                        species[iSpecies].cName + " velocity!");
+
     if (isBad) {
-      report.error("non-finite found in " + 
-		   species[iSpecies].cName + " velocity!");
+      report.error("non-finite found in " +
+                   species[iSpecies].cName + " velocity!");
       report.error("from location : " + location);
       didWork = false;
     }
   }
-  
+
   return didWork;
 }
 
