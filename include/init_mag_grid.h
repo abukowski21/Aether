@@ -11,16 +11,6 @@
 
 bool init_dipole_grid(Grid &mGrid, Planets planet);
 
-
-// Take limits & specs of field line, fill it with points.
-// std::pair<arma_vec, arma_vec> fill_dipole_q_line(precision_t qN_,
-//                                                  precision_t qS_,
-//                                                  precision_t Gamma_,
-//                                                  int64_t nZ_,
-//                                                  precision_t Lshell_,
-//                                                  precision_t min_alt_);
-
-
 // Analytic solution to get from q,p dipole coords to r,theta
 // q coordinate along b-field line
 // p l-shell 
@@ -41,11 +31,18 @@ arma_vec baselat_spacing(precision_t extent,
                         int16_t nLats,
                         precision_t spacing_factor);
 
+// Take limits & specs of field line, fill it with points.
+// std:: tuple <arma_mat, arma_mat, arma_vec> Grid::fill_field_lines (arma_vec lShells, 
+//                                                 int64_t nAlts,
+//                                                 int64_t nLats,
+//                                                 precision_t Gamma);
 
-std::tuple<arma_mat, arma_mat> fill_field_lines(arma_vec lShells, 
-                                               int64_t nAlts,
-                                               int64_t nLats,
-                                               precision_t Gamma);
+
+// convert mag to geographic
+std::vector <arma_cube> mag_to_geo(arma_cube magLon, 
+                                   arma_cube magLat,
+                                   arma_cube magAlt,
+                                   Planets planet);
 
 
 #endif  // INCLUDE_INIT_GEO_GRID_H_

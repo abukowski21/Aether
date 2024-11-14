@@ -73,6 +73,10 @@ public:
   arma_cube magAlt_scgc, magZ_scgc;
   arma_cube magLocalTime_scgc;
 
+  // Dipole coordinates:
+  // Phi => Longitude
+  // P   => L-shell
+  // Q   => Distance along field line
   arma_cube magPhi_scgc;
   arma_cube magP_scgc;
   arma_cube magQ_scgc;
@@ -190,6 +194,16 @@ public:
   void calc_alt_grid_spacing();
   void calc_lat_grid_spacing();
   void calc_long_grid_spacing();
+
+  void calc_dipole_grid_spacing(Planets planet);
+  void calc_alt_dipole_grid_spacing();
+  void calc_lat_dipole_grid_spacing();
+  void calc_long_dipole_grid_spacing();
+  void fill_field_lines(arma_vec baseLats, int64_t nAlts, precision_t min_altRe,
+                        precision_t Gamma, Planets planet);
+
+  // void calc_alt_dipole_grid_spacing();
+
   void fill_grid_radius(Planets planet);
   void calc_rad_unit(Planets planet);
   void calc_gravity(Planets planet);
@@ -210,9 +224,8 @@ public:
   void convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3],
                               precision_t XyzGeo[3]);
 
-
   bool init_dipole_grid(Quadtree quadtree_ion, Planets planet);
-  
+
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);
 
