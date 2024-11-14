@@ -441,9 +441,12 @@ void Grid::calc_dipole_grid_spacing(Planets planet)
   int64_t iLon, iLat, iAlt;
 
   report.print(3, "starting calc_grid_spacing");
+  report.print(3, "starting alt");
 
   calc_alt_dipole_grid_spacing();
+  report.print(3, "starting lat");
   calc_lat_dipole_grid_spacing();
+  report.print(3, "starting long");
   calc_long_dipole_grid_spacing();
 
   std::vector<arma_cube> lon_lat_radius;
@@ -462,12 +465,9 @@ void Grid::calc_dipole_grid_spacing(Planets planet)
 
 
 // for sanity (only marginally helpful):
-inline arma_vec delTv(arma_vec theta){
-  return (sqrt(3 * cos(theta) * cos(theta) + 1));
+inline arma_mat delTm(arma_mat theta){
+  return (sqrt(3 * cos(theta) % cos(theta) + 1));
   }
-// inline arma_cube delT(arma_cube theta){
-//   return (sqrt(3 * cos(theta) % cos(theta) + 1));
-//   }
 inline arma_cube delTc(arma_cube theta){
   return (sqrt(3 * cos(theta) % cos(theta) + 1));
   }
@@ -493,15 +493,15 @@ void Grid::calc_alt_dipole_grid_spacing()
       dalt_center_scgc.slice(iAlt) =
           // 1 / (magP_scgc.slice(iAlt + 1) 
           //     % abs(sin(magLat_scgc.slice(iAlt + 1)) - sin(magLat_scgc.slice(iAlt -1)))) / 2.0;
-          abs(magAlt_scgc.slice(iAlt + 1)  % sin(magLat_scgc.slice(iAlt + 1) ) % (1/delTv(magLat_scgc.slice(iAlt + 1) )) 
-          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTv(magLat_scgc.slice(iAlt - 1) ))
+          abs(magAlt_scgc.slice(iAlt + 1)  % sin(magLat_scgc.slice(iAlt + 1) ) % (1/delTm(magLat_scgc.slice(iAlt + 1) )) 
+          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTm(magLat_scgc.slice(iAlt - 1) ))
           )*2;
           
       dalt_lower_scgc.slice(iAlt) =
           // 1 / (magP_scgc.slice(iAlt + 1) 
           //     % abs(sin(magLat_scgc.slice(iAlt)) - sin(magLat_scgc.slice(iAlt-1))));
-          abs(magAlt_scgc.slice(iAlt)  % sin(magLat_scgc.slice(iAlt) ) % (1/delTv(magLat_scgc.slice(iAlt) )) 
-          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTv(magLat_scgc.slice(iAlt - 1) ))
+          abs(magAlt_scgc.slice(iAlt)  % sin(magLat_scgc.slice(iAlt) ) % (1/delTm(magLat_scgc.slice(iAlt) )) 
+          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTm(magLat_scgc.slice(iAlt - 1) ))
           )*2;
     }
   }
@@ -589,5 +589,5 @@ void Grid::calc_long_dipole_grid_spacing()
   // Make this into a distance:
   dlon_center_dist_scgc =
       // dlon_center_scgc % radius_scgc % abs(cos(geoLat_scgc));
-      dlon_center_scgc % magAlt_scgc % abs(cos(magLat_scgc));
+      dlon_center_scgc % magAlt_scgc % cos(magLat_scgc);
 }
