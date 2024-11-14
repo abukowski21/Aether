@@ -175,7 +175,40 @@ std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
   }
 
   report.exit(function);
-  return std::make_tuple(bLats, bAlts);
+  return;
+}
+
+///////////////////////////////////////////
+// convert cell coordinates to geographic//
+///////////////////////////////////////////
+std::vector <arma_cube> mag_to_geo(arma_cube magLon, arma_cube magLat, arma_cube magAlt,
+Planets planet){
+  std::string function = "Grid::init_dipole_grid";
+  static int iFunction = -1;
+  report.enter(function, iFunction);
+
+  std::vector<arma_cube> llr, xyz_mag, xyz_geo, xyzRot1, xyzRot2;
+  llr.push_back(magLon);
+  llr.push_back(magLat);
+  llr.push_back(magAlt);
+  xyz_mag = transform_llr_to_xyz_3d(llr);
+
+  precision_t magnetic_pole_rotation = planet.get_dipole_rotation();
+  precision_t magnetic_pole_tilt = planet.get_dipole_tilt();
+  std::vector<precision_t> dipole_center = planet.get_dipole_center();
+
+  // Reverse our dipole rotations:
+  xyzRot1 = rotate_around_y_3d(xyz_mag, magnetic_pole_tilt);
+  xyzRot2 = rotate_around_z_3d(xyzRot1, magnetic_pole_rotation);
+
+  // offset dipole (not yet implemented):
+  // xyz_geo[0] = xyzRot2[0] + dipole_center[0];
+  // xyz_geo[1] = xyzRot2[1] + dipole_center[1];
+  // xyz_geo[2] = xyzRot2[2] + dipole_center[2];
+
+  // transform back to lon, lat, radius:
+  llr = transform_xyz_to_llr_3d(xyzRot2);
+  return llr;
 }
 
 // -----------------------------------------------------------------------
@@ -335,22 +368,13 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
       // Not currently used. Dipole isn't offset. Leaving just in case.
       // Lon = magPhi_scgc(iLon, iLat, 1);
 
-      for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
-      {
-        lat1dAlong(iAlt) = bLats(iLat, iAlt);
-        rNorm1d(iAlt) = bAlts(iLat, iAlt);
-      }
-      r3d.tube(iLon, iLat) = rNorm1d * planetRadius;
-      magLat_scgc.tube(iLon, nLats - iLat - 1) = -lat1dAlong;
-    }
-  }
-  report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
+  std::vector <arma_cube> llr = mag_to_geo(magLon_scgc, magLat_scgc, magAlt_scgc, planet);
 
-  geoLat_scgc = magLat_scgc;
-  magAlt_scgc = r3d - planetRadius;
-  geoAlt_scgc = magAlt_scgc;
+  geoLon_scgc = llr[0];
+  geoLat_scgc = llr[1];
+  geoAlt_scgc = llr[2] - planetRadius;
+  report.print(4, "Done dipole -> geographic transformations for the dipole grid.");
 
-  report.print(4, "Beginning coordinate transformations of the dipole grid.");
   // Calculate the radius, of planet
   fill_grid_radius(planet);
 
@@ -369,7 +393,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   arma_cube bm = sqrt(br % br + bt % bt);
   // Latitudinal direction of radial:
   arma_cube s = sign(magLat_scgc);
-  s.elem(find(s == 0)).ones();
+  // s.elem(find(s == 0)).ones();
 
   rad_unit_vcgc[1] = bt / bm % s;
   rad_unit_vcgc[2] = -br / bm;
@@ -386,33 +410,16 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 
   report.print(4, "Done gravity calculations for the dipole grid.");
 
-  vector<arma_cube> llr, xyz, xyzRot1, xyzRot2;
-  llr.push_back(magLon_scgc);
-  llr.push_back(magLat_scgc);
-  llr.push_back(r3d);
-  xyz = transform_llr_to_xyz_3d(llr);
-
-  precision_t magnetic_pole_rotation = planet.get_dipole_rotation();
-  precision_t magnetic_pole_tilt = planet.get_dipole_tilt();
-
-  // Reverse our dipole rotations:
-  xyzRot1 = rotate_around_y_3d(xyz, magnetic_pole_tilt);
-  xyzRot2 = rotate_around_z_3d(xyzRot1, magnetic_pole_rotation);
-
-  // transform back to lon, lat, radius:
-  llr = transform_xyz_to_llr_3d(xyzRot2);
-
-  geoLon_scgc = llr[0];
-  geoLat_scgc = llr[1];
-  geoAlt_scgc = llr[2] - planetRadius;
-  report.print(4, "Done dipole -> geographic transformations for the dipole grid.");
-
-  calc_alt_grid_spacing();
+  calc_dipole_grid_spacing(planet);
   report.print(4, "Done altitude spacing for the dipole grid.");
 
   // Calculate magnetic field and magnetic coordinates:
   fill_grid_bfield(planet);
   report.print(4, "Done filling dipole grid with b-field!");
+
+
+  // put back into altitude. we've been carrying around radius:
+  magAlt_scgc = magAlt_scgc - planetRadius;
 
   report.exit(function);
   return DidWork;
