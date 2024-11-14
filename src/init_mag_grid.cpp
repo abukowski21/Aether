@@ -174,6 +174,37 @@ std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
     }
   }
 
+  report.print(3, "QP-rtheta done!");
+
+  arma_vec rNorm1d(nAlts), lat1dAlong(nAlts);
+  arma_cube r3d(nLons, nLats, nAlts);
+  precision_t planetRadius;
+
+  // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
+  // This is wrong, but get_radius doesnt support latitude at the time of writing
+  planetRadius =  planet.get_radius(bLats(0)); 
+
+  for (int64_t iLat = 0; iLat < nLats / 2; iLat++)
+  {
+    for (int64_t iLon = 0; iLon < nLons; iLon++)
+    {
+      // Not currently used. Dipole isn't offset. Leaving just in case.
+      // Lon = magPhi_scgc(iLon, iLat, 1);
+
+      for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
+      {
+        lat1dAlong(iAlt) = bLats(iLat, iAlt);
+        rNorm1d(iAlt) = bAlts(iLat, iAlt);
+      }
+      r3d.tube(iLon, iLat) = rNorm1d * planetRadius;
+      magLat_scgc.tube(iLon, nLats - iLat - 1) = -lat1dAlong;
+    }
+  }
+
+  
+  magAlt_scgc = r3d;// - planetRadius;
+  geoAlt_scgc = magAlt_scgc;
+
   report.exit(function);
   return;
 }
