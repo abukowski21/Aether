@@ -155,18 +155,22 @@ std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
 
     // calculate const. stride similar to sami2/3 (huba & joyce 2000)
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
+    // Doesn't have any lat/lon dependence so won't work for offset dipoles
+    delqp = (q_N - q_S) / (nAlts + 1);
+    delqp = min_altRe * delqp;
     for (int iAlt = 0; iAlt < nAlts; iAlt++)
     {
-      // Doesn't have any lat/lon dependence so won't work for offset dipoles
-      delqp = (q_N - q_S) / (nAlts + 1);
       qp0 = q_S + iAlt * (delqp);
-      delqp = min_altRe * delqp;
       fb0 = (1 - exp_q_dist(iAlt)) / exp(-q_S / delqp - 1);
       ft = exp_q_dist(iAlt) - fb0 + fb0 * exp(-(qp0 - q_S) / delqp);
       delq = qp0 - q_S;
 
       // Q value at this point:
       qp2 = q_S + ft * delq;
+      for (int64_t iLon=0; iLon < nLons; iLon ++) {
+        magQ_scgc(iLon, iLat, iAlt) = qp2;
+      }
+
 
       r_theta = qp_to_r_theta(qp2, Lshells(iLat));
       bAlts(iLat, iAlt) = r_theta.first;
