@@ -42,7 +42,6 @@ arma_vec baselat_spacing(precision_t extent,
   std::string function = "Grid::baselat_spacing";
   static int iFunction = -1;
   report.enter(function, iFunction);
-  report.print(3, "baselates enter!");
 
   // intermediate latitude values
   precision_t lat_low, lat_high, lat_low0, lat_high0;
@@ -64,15 +63,15 @@ arma_vec baselat_spacing(precision_t extent,
   // get the upper & lower latitude bounds for our division of the quadree
   if (origin < 0)
   {
-    // negative origin: lat_high = lat_low & vice-versa.
-    lat_low, lat_high = -lat_high, -lat_low;
+    // negative origin: lat_high <=> lat_low,  & vice-versa.
+    lat_low, lat_high = -upper_lim, -lower_lim;
     lat_low0 = lat_low;
     lat_low = lat_low - (lat_high - lat_low) * (origin / 0.5);
     lat_high = lat_low0 - (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
   }
   else
   {
-    lat_low0 = lat_low;
+    lat_low0 = lower_lim;
     lat_low = lat_low + (lat_high - lat_low) * (origin / 0.5);
     lat_high = lat_low0 + (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
   }
@@ -82,7 +81,7 @@ arma_vec baselat_spacing(precision_t extent,
   bb = (lat_high - lat_low) / (pow(lat_high, spacing_factor) - pow(lat_low, spacing_factor));
   aa = lat_high - bb * pow(lat_high, spacing_factor);
   dlat = (lat_high - lat_low) / (nLats);
-  report.print(3, "baselates laydown!");
+  report.print(4, "baselates laydown!");
 
   for (int64_t j = 0; j < nLats; j++)
   {
@@ -90,14 +89,14 @@ arma_vec baselat_spacing(precision_t extent,
     angq = aa + bb * pow(ang0, spacing_factor);
     Lats[j] = angq;
   }
-  report.print(3, "baselates flipback!");
+  report.print(5, "baselates flipback!");
 
   if (DO_FLIPBACK)
     for (int64_t j = 0; j < nLats; j++)
     {
       Lats[j + nLats] = -1 * Lats[j];
     }
-  report.print(3, "baselates flipbackdone!");
+  report.print(4, "baselates flipbackdone!");
 
   report.exit(function);
   return Lats;
@@ -108,18 +107,14 @@ arma_vec baselat_spacing(precision_t extent,
 // - In dipole (p,q) coordinates
 // - North & south hemisphere base
   
-std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
-                                                  int64_t nAlts,
-                                                  precision_t min_altRe,
-                                                  precision_t Gamma)
+void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
+                            precision_t min_altRe, precision_t Gamma,
+                            Planets planet)
 {
 
   std::string function = "Grid::fill_field_lines";
   static int iFunction = -1;
   report.enter(function, iFunction);
-
-  report.print(3, "entered!");
-
 
   int64_t nLats = baseLats.n_elem;
 
@@ -140,20 +135,28 @@ std:: tuple <arma_mat, arma_mat> fill_field_lines(arma_vec baseLats,
   arma_vec Lshells(nLats);
   for (int64_t iLat = 0; iLat < nLats; iLat++)
     Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLats(iLat)), 2.0);
-  report.print(3, "lshells!");
-
+  report.print(3, "lshells calculated!");
+  
+  // for (int64_t iLon = 0; iLon < nLons; iLon ++){
+    for (int64_t iLat = 0; iLat < nLats; iLat ++){
+      magP_scgc.col(iLat) = magP_scgc.col(iLat) + Lshells(iLat);
+  }
 
   int64_t nZby2 = nAlts / 2;
 
   for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
     exp_q_dist(iAlt) = Gamma + (1 - Gamma) * exp(-pow(((iAlt - nZby2) / (nAlts / 10.0)), 2.0));
+  report.print(3, "expQ");
 
   for (int iLat = 0; iLat < nLats; iLat++)
   {
     q_S = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
     q_N = -q_S;
 
-    // calculate const. stride similar to sami2/3 (huba & joyce 2000)
+    // calculate const. stride similar to sami2/3 (huba & joyce 2000) 
+    // and in schunk handbook :
+    // - millward et al (CTIP) ~p249-250
+    // - Bailey & Balan ~p197
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
     // Doesn't have any lat/lon dependence so won't work for offset dipoles
     delqp = (q_N - q_S) / (nAlts + 1);
@@ -261,7 +264,7 @@ void Grid::convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3], prec
   precision_t XyzRemoveTilt[3];
   precision_t XyzRemoveRot[3];
 
-  // get planetary parameters, use radius at equator for Lshell reference
+  // get planetary parameters
   precision_t magnetic_pole_tilt = planet.get_dipole_tilt();
   precision_t magnetic_pole_rotation = planet.get_dipole_rotation();
   precision_t radius = planet.get_radius(0.0);
@@ -295,7 +298,7 @@ void Grid::convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3], prec
 // ----------------------------------------------------------------------
 // Initialize the dipole grid.
 // - inputs (min_apex, min_alt, LatStretch, FieldLineStretch, max_lat_dipole)
-//   are read from input files. And, of course, the numbers of each coordinate
+//   are read from input files. And the numbers of each coordinate.
 // - nLats must be even!!
 // ----------------------------------------------------------------------
 bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
@@ -312,9 +315,10 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // turn the switch on!
   IsGeoGrid = false;
   IsMagGrid = true;
+  IsCubeSphereGrid=false;
 
-  // Dimension iterators
-  int64_t iLon, iLat, iAlt;
+  report.print(0, "Creating inter-node connections Grid");
+  if (!Is0D & !Is1Dz) create_sphere_connection(quadtree_ion);
 
   report.print(0, "Creating Dipole Grid");
 
@@ -332,7 +336,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   precision_t min_apex = grid_input.min_apex * cKMtoM;
   precision_t max_lat = grid_input.max_blat;
 
-  // Normalize inputs to planet radius...
+  // Normalize inputs to planet radius... (update when earth is oblate)
   precision_t planetRadius = planet.get_radius(0.0);
   // Altitude to begin modeling, normalized to planet radius
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
@@ -363,21 +367,26 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   if (!HasXdim)
     dlon = 1.0 * cDtoR;
 
+  // Dimension iterators
+  int64_t iLon, iLat, iAlt;
+
   // Longitudes:
   // - Make a 1d vector
   // - copy it into the 3d cube
   for (iLon = 0; iLon < nLons; iLon++)
     lon1d(iLon) = lon0 + (iLon - nGCs + 0.5) * dlon;
 
-  for (iLat = 0; iLat < nLats; iLat++)
-  {
+  for (iLat = 0; iLat < nLats; iLat++) {
     for (iAlt = 0; iAlt < nAlts; iAlt++)
       magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
+      // geoLon_Left.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
   }
+
   report.print(3, "longitudes point two");
 
   // Latitudes:
 
+  // min_lat calculated from min_apex
   precision_t min_lat = acos(sqrt(1 / min_alt_re));
 
   // latitude of field line base:
@@ -385,23 +394,16 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   arma_vec baseLats = baselat_spacing(size_up_norm[1], lower_left_norm[1],
                                       max_lat, min_lat, nLats, 1.0);
 
-  report.print(3, "baselates done!");
+  report.print(3, "baselats done!");
 
-  // Fill field lines!
-  arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
-  std::tie(bLats, bAlts) = fill_field_lines(baseLats, nAlts, min_alt_re, Gamma);
+  // arma_vec lShells(nLats);
+  // latitude & altitude of points on field lines (2D)
+  // arma_mat bLats(nLats, nAlts), bAlts(nLats, nAlts);
+  fill_field_lines(baseLats, nAlts, min_alt_re, Gamma, planet);
   
-  arma_vec rNorm1d(nAlts), lat1dAlong(nAlts);
-  arma_cube r3d(nLons, nLats, nAlts);
+  
+  report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
 
-  // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
-
-  for (int64_t iLat = 0; iLat < nLats / 2; iLat++)
-  {
-    for (int64_t iLon = 0; iLon < nLons; iLon++)
-    {
-      // Not currently used. Dipole isn't offset. Leaving just in case.
-      // Lon = magPhi_scgc(iLon, iLat, 1);
 
   std::vector <arma_cube> llr = mag_to_geo(magLon_scgc, magLat_scgc, magAlt_scgc, planet);
 
