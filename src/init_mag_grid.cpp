@@ -191,7 +191,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   // This is wrong, but get_radius doesnt support latitude at the time of writing
   planetRadius =  planet.get_radius(bLats(0)); 
 
-  for (int64_t iLat = 0; iLat < nLats / 2; iLat++)
+  for (int64_t iLat = 0; iLat < nLats; iLat++)
   {
     for (int64_t iLon = 0; iLon < nLons; iLon++)
     {
@@ -208,9 +208,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
     }
   }
 
-  
-  magAlt_scgc = r3d;// - planetRadius;
-  geoAlt_scgc = magAlt_scgc;
+  magAlt_scgc = r3d;
 
   report.exit(function);
   return;
@@ -340,6 +338,9 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   precision_t planetRadius = planet.get_radius(0.0);
   // Altitude to begin modeling, normalized to planet radius
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
+  precision_t min_apex_re = (min_apex + planetRadius) / planetRadius;
+
+  std:: cout<<min_alt<<","<<min_alt_re<<","<<min_apex_re<<","<<planetRadius<<"\n";
 
   if (LatStretch != 1){
     report.error("LatStretch values =/= 1 are not yet supported!");
@@ -387,7 +388,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // Latitudes:
 
   // min_lat calculated from min_apex
-  precision_t min_lat = acos(sqrt(1 / min_alt_re));
+  precision_t min_lat = acos(sqrt(1 / min_apex_re));
 
   // latitude of field line base:
   // todo: needs support for variable stretching. it's like, halfway there.
@@ -399,7 +400,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // arma_vec lShells(nLats);
   // latitude & altitude of points on field lines (2D)
   // arma_mat bLats(nLats, nAlts), bAlts(nLats, nAlts);
-  fill_field_lines(baseLats, nAlts, min_alt_re, Gamma, planet);
+  fill_field_lines(baseLats, nAlts, min_apex_re, Gamma, planet);
   
   
   report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
