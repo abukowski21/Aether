@@ -214,9 +214,9 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   return;
 }
 
-///////////////////////////////////////////
-// convert cell coordinates to geographic//
-///////////////////////////////////////////
+////////////////////////////////////////////
+// convert cell coordinates to geographic //
+////////////////////////////////////////////
 std::vector <arma_cube> mag_to_geo(arma_cube magLon, arma_cube magLat, arma_cube magAlt,
 Planets planet){
   std::string function = "Grid::init_dipole_grid";
