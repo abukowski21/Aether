@@ -102,6 +102,15 @@ arma_vec baselat_spacing(precision_t extent,
   return Lats;
 }
 
+// // Gravity vectors in the dipole basis
+// void calc_dipole_gravity(Planets planet){
+
+// // rhat = -(2*cos/(del)) qhat + (sin/(del)) phat
+
+
+// }
+
+
 // === SPACING ALONG FIELD LINE === //
 // Coordinates along the field line to begin modeling
 // - In dipole (p,q) coordinates
@@ -173,7 +182,6 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
       for (int64_t iLon=0; iLon < nLons; iLon ++) {
         magQ_scgc(iLon, iLat, iAlt) = qp2;
       }
-
 
       r_theta = qp_to_r_theta(qp2, Lshells(iLat));
       bAlts(iLat, iAlt) = r_theta.first;
@@ -339,8 +347,6 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // Altitude to begin modeling, normalized to planet radius
   precision_t min_alt_re = (min_alt + planetRadius) / planetRadius;
   precision_t min_apex_re = (min_apex + planetRadius) / planetRadius;
-
-  std:: cout<<min_alt<<","<<min_alt_re<<","<<min_apex_re<<","<<planetRadius<<"\n";
 
   if (LatStretch != 1){
     report.error("LatStretch values =/= 1 are not yet supported!");
