@@ -403,9 +403,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 
   report.print(3, "baselats done!");
 
-  // arma_vec lShells(nLats);
   // latitude & altitude of points on field lines (2D)
-  // arma_mat bLats(nLats, nAlts), bAlts(nLats, nAlts);
   fill_field_lines(baseLats, nAlts, min_apex_re, Gamma, planet);
   
   
