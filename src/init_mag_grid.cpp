@@ -211,8 +211,9 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
         lat1dAlong(iAlt) = bLats(iLat, iAlt);
         rNorm1d(iAlt) = bAlts(iLat, iAlt);
       }
-      r3d.tube(iLon, iLat) = rNorm1d * planetRadius;
-      magLat_scgc.tube(iLon, nLats - iLat - 1) = -lat1dAlong;
+      // Indexing is weird, but consistent. Might be helpful to plot out...
+      r3d.tube(iLon,  nLats - iLat - 1) = rNorm1d * planetRadius;
+      magLat_scgc.tube(iLon, nLats - iLat - 1) = lat1dAlong;
     }
   }
 
