@@ -63,7 +63,7 @@ arma_vec baselat_spacing(precision_t extent,
   // get the upper & lower latitude bounds for our division of the quadree
   if (origin < 0)
   {
-    // negative origin: lat_high <=> lat_low,  & vice-versa.
+    // negative origin: lat_high <=> lat_low
     lat_low, lat_high = -upper_lim, -lower_lim;
     lat_low0 = lat_low;
     lat_low = lat_low - (lat_high - lat_low) * (origin / 0.5);
@@ -81,7 +81,7 @@ arma_vec baselat_spacing(precision_t extent,
   bb = (lat_high - lat_low) / (pow(lat_high, spacing_factor) - pow(lat_low, spacing_factor));
   aa = lat_high - bb * pow(lat_high, spacing_factor);
   dlat = (lat_high - lat_low) / (nLats);
-  report.print(4, "baselates laydown!");
+  report.print(4, "baselats laydown!");
 
   for (int64_t j = 0; j < nLats; j++)
   {
@@ -89,14 +89,16 @@ arma_vec baselat_spacing(precision_t extent,
     angq = aa + bb * pow(ang0, spacing_factor);
     Lats[j] = angq;
   }
-  report.print(5, "baselates flipback!");
+  report.print(5, "baselats flipback!");
 
+  // In the flipback case (single processor, global sim), we want baselats
+  // to be strictly increasing, same as geo grid! 
   if (DO_FLIPBACK)
     for (int64_t j = 0; j < nLats; j++)
     {
-      Lats[j + nLats] = -1 * Lats[j];
+      Lats[j + nLats] = -1 * Lats[nLats - j - 1];
     }
-  report.print(4, "baselates flipbackdone!");
+  report.print(4, "baselats flipback done!");
 
   report.exit(function);
   return Lats;
