@@ -163,10 +163,9 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
     q_N = -q_S;
 
     // calculate const. stride similar to sami2/3 (huba & joyce 2000) 
-    // and in schunk handbook :
-    // - millward et al (CTIP) ~p249-250
-    // - Bailey & Balan ~p197
+    // Note, this is not the:
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
+    // but a different formula where the spacing is easily controlled.
     // Doesn't have any lat/lon dependence so won't work for offset dipoles
     delqp = (q_N - q_S) / (nAlts + 1);
     delqp = min_altRe * delqp;
