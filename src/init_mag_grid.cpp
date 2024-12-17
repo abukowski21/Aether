@@ -115,8 +115,9 @@ arma_vec baselat_spacing(precision_t extent,
 
 // === SPACING ALONG FIELD LINE === //
 // Coordinates along the field line to begin modeling
-// - In dipole (p,q) coordinates
-// - North & south hemisphere base
+// - Created in dipole (p,q) coordinates, stored as magnetic coords
+// - North & south hemisphere base-latitudes, shouldn't be *too* hard to support offset 
+//   dipole and/or oblate Earth.
   
 void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
                             precision_t min_altRe, precision_t Gamma,
@@ -164,10 +165,10 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
     q_S = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
     q_N = -q_S;
 
-    // calculate const. stride similar to sami2/3 (huba & joyce 2000) 
-    // Note, this is not the:
+    // calculate const stride in dipole coords, same as sami2/3 (huba & joyce 2000) 
+    // Note this is not the:
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
-    // but a different formula where the spacing is easily controlled.
+    // but a different formula where the spacing is more easily controlled.
     // Doesn't have any lat/lon dependence so won't work for offset dipoles
     delqp = (q_N - q_S) / (nAlts + 1);
     delqp = min_altRe * delqp;
@@ -197,7 +198,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   precision_t planetRadius;
 
   // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
-  // This is wrong, but get_radius doesnt support latitude at the time of writing
+  // This is wrong (same lat everywhere), but get_radius doesnt support oblate earth yet.
   planetRadius =  planet.get_radius(bLats(0)); 
 
   for (int64_t iLat = 0; iLat < nLats; iLat++)
@@ -212,13 +213,15 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
         lat1dAlong(iAlt) = bLats(iLat, iAlt);
         rNorm1d(iAlt) = bAlts(iLat, iAlt);
       }
-      // Indexing is weird, but consistent. Might be helpful to plot out...
-      r3d.tube(iLon,  nLats - iLat - 1) = rNorm1d * planetRadius;
-      magLat_scgc.tube(iLon, nLats - iLat - 1) = lat1dAlong;
+      // Lay things down in the same order as the geo grod.
+      magAlt_scgc.tube(iLon,  iLat) = rNorm1d * planetRadius;
+      // r3d.tube(iLon,  nLats - iLat - 1) = rNorm1d * planetRadius;
+      magLat_scgc.tube(iLon, iLat) = lat1dAlong;
     }
   }
 
-  magAlt_scgc = r3d;
+  // magAlt_scgc = r3d;
+      // magAlt_scgc.tube(iLon,  nLats - iLat - 1) = rNorm1d * planetRadius;
 
   report.exit(function);
   return;
@@ -366,7 +369,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   arma_vec lower_left_norm = quadtree_ion.get_vect("LL"); // origin
   arma_vec size_right_norm = quadtree_ion.get_vect("SR"); // lon_lims
   arma_vec size_up_norm = quadtree_ion.get_vect("SU");    //[1] = lat_lims
-  report.print(3, "longitudes");
+  report.print(3, "Initializing (dipole) longitudes");
 
   precision_t dlon = size_right_norm(0) * cPI / (nLons - 2 * nGCs);
   precision_t lon0 = lower_left_norm(0) * cPI;
