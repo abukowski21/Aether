@@ -434,15 +434,19 @@ void Grid::calc_cent_acc(Planets planet) {
   cent_acc_vcgc[2] = omega2 * radius_scgc % cos(geoLat_scgc) % cos(geoLat_scgc);
 }
 
-
 void Grid::calc_dipole_grid_spacing(Planets planet)
 {
 
   int64_t iLon, iLat, iAlt;
 
   report.print(3, "starting calc_grid_spacing");
+  
+  // This is close, but may need to be adjusted later. 
+  // These quantities are obtained from integrating the scale factor (h)
+  // The along-field-line distance (alt) should be right, but the lat distance
+  // is the shortest distance from a point to the adjacent field line, not the adjacent cell.
+  
   report.print(3, "starting alt");
-
   calc_alt_dipole_grid_spacing();
   report.print(3, "starting lat");
   calc_lat_dipole_grid_spacing();
@@ -462,7 +466,6 @@ void Grid::calc_dipole_grid_spacing(Planets planet)
 
   report.print(3, "ending calc_grid_spacing");
 }
-
 
 // for sanity (only marginally helpful):
 inline arma_mat delTm(arma_mat theta){
@@ -484,25 +487,22 @@ void Grid::calc_alt_dipole_grid_spacing()
   // arma_vec alt_spacing;
   precision_t planetRadius;
 
-
   for (int64_t iLat = 1; iLat < nLats; iLat++)
   {
-
     for (iAlt = 1; iAlt < nAlts - 1; iAlt++)
     {
+
       dalt_center_scgc.slice(iAlt) =
-          // 1 / (magP_scgc.slice(iAlt + 1) 
-          //     % abs(sin(magLat_scgc.slice(iAlt + 1)) - sin(magLat_scgc.slice(iAlt -1)))) / 2.0;
-          abs(magAlt_scgc.slice(iAlt + 1)  % sin(magLat_scgc.slice(iAlt + 1) ) % (1/delTm(magLat_scgc.slice(iAlt + 1) )) 
-          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTm(magLat_scgc.slice(iAlt - 1) ))
-          )*2;
-          
+          abs(magAlt_scgc.slice(iAlt + 1) % sin(magLat_scgc.slice(iAlt + 1)) 
+              % (1 / delTm(magLat_scgc.slice(iAlt + 1))) 
+              - magAlt_scgc.slice(iAlt - 1) % sin(magLat_scgc.slice(iAlt - 1)) 
+                % (1 / delTm(magLat_scgc.slice(iAlt - 1)))) * 2;
+
       dalt_lower_scgc.slice(iAlt) =
-          // 1 / (magP_scgc.slice(iAlt + 1) 
-          //     % abs(sin(magLat_scgc.slice(iAlt)) - sin(magLat_scgc.slice(iAlt-1))));
-          abs(magAlt_scgc.slice(iAlt)  % sin(magLat_scgc.slice(iAlt) ) % (1/delTm(magLat_scgc.slice(iAlt) )) 
-          - magAlt_scgc.slice(iAlt - 1)  % sin(magLat_scgc.slice(iAlt - 1) ) % (1/delTm(magLat_scgc.slice(iAlt - 1) ))
-          )*2;
+          abs(magAlt_scgc.slice(iAlt) % sin(magLat_scgc.slice(iAlt))
+              % (1 / delTm(magLat_scgc.slice(iAlt))) 
+              - magAlt_scgc.slice(iAlt - 1) % sin(magLat_scgc.slice(iAlt - 1)) 
+              % (1 / delTm(magLat_scgc.slice(iAlt - 1)))) * 2;
     }
   }
 
@@ -543,10 +543,10 @@ void Grid::calc_lat_dipole_grid_spacing()
   for (iLat = 1; iLat < nLats - 1; iLat++)
   {
     dlat_center_scgc.col(iLat) =
-        abs(magAlt_scgc.col(iLat + 1)  % sin(magLat_scgc.col(iLat + 1) ) % (1 / delTc(magLat_scgc.col(iLat + 1) )) 
-          - magAlt_scgc.col(iLat - 1)  % sin(magLat_scgc.col(iLat - 1) ) % (1 / delTc(magLat_scgc.col(iLat - 1) ))
-          )*2;
-          
+        abs(magAlt_scgc.col(iLat + 1) % sin(magLat_scgc.col(iLat + 1)) 
+            % (1 / delTc(magLat_scgc.col(iLat + 1))) 
+            - magAlt_scgc.col(iLat - 1) % sin(magLat_scgc.col(iLat - 1)) 
+              % (1 / delTc(magLat_scgc.col(iLat - 1)))) * 2;
   }
 
   // Bottom (one sided):
@@ -574,8 +574,7 @@ void Grid::calc_long_dipole_grid_spacing()
   for (iLon = 1; iLon < nLons - 1; iLon++)
     dlon_center_scgc.row(iLon) =
         (magLon_scgc.row(iLon + 1) - magLon_scgc.row(iLon - 1)) / 2.0;
-        // this might be fine for the dipole, if it works for the geo grid...
-
+  // this might be fine for the dipole, if it works for the geo grid...
 
   // Bottom (one sided):
   iLon = 0;
