@@ -69,7 +69,7 @@ arma_vec baselat_spacing(precision_t extent,
   // intermediate latitude values
   precision_t lat_low, lat_high, lat_low0, lat_high0;
   // intermediate calculation values
-  precision_t dlat, bb, aa, ang0, angq;
+  precision_t dlat, bb, aa, ang0, angq, nLats_here, extent_here;
 
   // Now we can allocate the return array,
   arma_vec Lats(nLats);
@@ -79,8 +79,11 @@ arma_vec baselat_spacing(precision_t extent,
   if (extent > 0.5)
   {
     DO_FLIPBACK = true;
-    nLats = nLats / 2;
-    extent = 0.5;
+    nLats_here = nLats / 2;
+    extent_here = 0.5;
+  }
+  else{
+    nLats_here = nLats;
   }
 
   // get the upper & lower latitude bounds for our division of the quadree
@@ -90,23 +93,23 @@ arma_vec baselat_spacing(precision_t extent,
     lat_low, lat_high = -upper_lim, -lower_lim;
     lat_low0 = lat_low;
     lat_low = lat_low - (lat_high - lat_low) * (origin / 0.5);
-    lat_high = lat_low0 - (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
+    lat_high = lat_low0 - (lat_high - lat_low0) * (extent_here / .5 + origin / 0.5);
   }
   else
   {
     lat_low0 = lower_lim;
     lat_low = lat_low + (lat_high - lat_low) * (origin / 0.5);
-    lat_high = lat_low0 + (lat_high - lat_low0) * (extent / .5 + origin / 0.5);
+    lat_high = lat_low0 + (lat_high - lat_low0) * (extent_here / .5 + origin / 0.5);
   }
 
   // normalized spacing in latitude
   // NOTE: spacing factor != 1 will not work yet. but framework is here...
   bb = (lat_high - lat_low) / (pow(lat_high, spacing_factor) - pow(lat_low, spacing_factor));
   aa = lat_high - bb * pow(lat_high, spacing_factor);
-  dlat = (lat_high - lat_low) / (nLats);
+  dlat = (lat_high - lat_low) / (nLats_here);
   report.print(4, "baselats laydown!");
 
-  for (int64_t j = 0; j < nLats; j++)
+  for (int64_t j = 0; j < nLats_here; j++)
   {
     ang0 = lat_low + (j + 1) * dlat;
     angq = aa + bb * pow(ang0, spacing_factor);
@@ -117,9 +120,9 @@ arma_vec baselat_spacing(precision_t extent,
   // In the flipback case (single processor, global sim), we want baselats
   // to be strictly increasing, same as geo grid! 
   if (DO_FLIPBACK)
-    for (int64_t j = 0; j < nLats; j++)
+    for (int64_t j = 0; j < nLats_here; j++)
     {
-      Lats[j + nLats] = -1 * Lats[nLats - j - 1];
+      Lats[j + nLats_here] = -1 * Lats[nLats_here - j - 1];
     }
   report.print(4, "baselats flipback done!");
 
