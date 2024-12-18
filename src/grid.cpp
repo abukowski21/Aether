@@ -143,6 +143,18 @@ Grid::Grid(std::string gridtype) {
 
   magLocalTime_scgc.set_size(nX, nY, nZ);
 
+  magLon_Left.set_size(nX + 1, nY, nZ);
+
+  magLat_Down.set_size(nX, nY + 1, nZ);
+  magLat_Below.set_size(nX, nY, nZ + 1);
+
+  magAlt_Down.set_size(nX, nY + 1, nZ);
+  magAlt_Below.set_size(nX, nY, nZ + 1);
+
+  magLon_Corner.set_size(nX + 1, nY + 1, nZ + 1);
+  magLat_Corner.set_size(nX + 1, nY + 1, nZ + 1);
+  magAlt_Corner.set_size(nX + 1, nY + 1, nZ + 1);
+
   radius_scgc.set_size(nX, nY, nZ);
   radius2_scgc.set_size(nX, nY, nZ);
   radius2i_scgc.set_size(nX, nY, nZ);
