@@ -155,7 +155,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
 
   int64_t nLats = baseLats.n_elem;
 
-  precision_t q_S, q_N, delqp;
+  precision_t q_Start, delqp;
   arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
 
   // allocate & calculate some things outside of the main loop
@@ -189,34 +189,30 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   }
   report.print(3, "dipole p-values stored for later.");
 
-
-  int64_t nZby2 = nAlts / 2;
-
   for (int64_t iAlt = 0; iAlt < nAlts; iAlt++)
-    exp_q_dist(iAlt) = Gamma + (1 - Gamma) * exp(-pow(((iAlt - nZby2) / (nAlts / 10.0)), 2.0));
+    exp_q_dist(iAlt) = Gamma + (1 - Gamma) * exp(-pow(((iAlt - nAlts) / (nAlts / 5.0)), 2.0));
   report.print(3, "expQ");
 
   for (int iLat = 0; iLat < nLats; iLat++)
   {
-    q_S = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
-    q_N = -q_S;
+    q_Start = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
 
     // calculate const stride in dipole coords, same as sami2/3 (huba & joyce 2000) 
     // Note this is not the:
     // ==  >>   sinh(gamma*qi)/sinh(gamma*q_S)  <<  ==
     // but a different formula where the spacing is more easily controlled.
     // Doesn't have any lat/lon dependence so won't work for offset dipoles
-    delqp = (q_N - q_S) / (nAlts + 1);
+    delqp = (-q_Start) / (nAlts + 1);
     delqp = min_altRe * delqp;
     for (int iAlt = 0; iAlt < nAlts; iAlt++)
     {
-      qp0 = q_S + iAlt * (delqp);
-      fb0 = (1 - exp_q_dist(iAlt)) / exp(-q_S / delqp - 1);
-      ft = exp_q_dist(iAlt) - fb0 + fb0 * exp(-(qp0 - q_S) / delqp);
-      delq = qp0 - q_S;
+      qp0 = q_Start + iAlt * (delqp);
+      fb0 = (1 - exp_q_dist(iAlt)) / exp(-q_Start / delqp - 1);
+      ft = exp_q_dist(iAlt) - fb0 + fb0 * exp(-(qp0 - q_Start) / delqp);
+      delq = qp0 - q_Start;
 
       // Q value at this point:
-      qp2 = q_S + ft * delq;
+      qp2 = q_Start + ft * delq;
 
       if (!isCorner){
         for (int64_t iLon=0; iLon < nLons; iLon ++) 
