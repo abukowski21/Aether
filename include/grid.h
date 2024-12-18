@@ -212,6 +212,8 @@ public:
   void calc_lat_dipole_grid_spacing();
   void calc_long_dipole_grid_spacing();
   void fill_field_lines(arma_vec baseLats, int64_t nAlts, precision_t min_altRe,
+                        precision_t Gamma, Planets planet,
+                        bool isCorner);
   void dipole_alt_edges();
 
   // void calc_alt_dipole_grid_spacing();
