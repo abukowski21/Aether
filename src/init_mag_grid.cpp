@@ -172,6 +172,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   arma_vec Lshells(nLats);
   for (int64_t iLat = 0; iLat < nLats; iLat++)
     Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLats(iLat)), 2.0);
+  
   report.print(3, "lshells calculated!");
   
   if (!isCorner){
@@ -179,6 +180,15 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
       magP_scgc.col(iLat) = magP_scgc.col(iLat) + Lshells(iLat);
       }
   }
+  else{
+    for (int64_t iLon = 0; iLon < nLons; iLon ++){
+      for (int64_t iLat = 0; iLat < nLats; iLat ++){
+        for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
+          magP_Down(iLon, iLat, iAlt) = Lshells(iLat);
+          }}}
+  }
+  report.print(3, "dipole p-values stored for later.");
+
 
   int64_t nZby2 = nAlts / 2;
 
@@ -207,10 +217,17 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
 
       // Q value at this point:
       qp2 = q_S + ft * delq;
+
       if (!isCorner){
         for (int64_t iLon=0; iLon < nLons; iLon ++) 
         magQ_scgc(iLon, iLat, iAlt) = qp2;
       }
+      else {
+        // save the q for the "down" case:
+        for (int64_t iLon=0; iLon < nLons; iLon ++) 
+          magQ_Down(iLon, iLat, iAlt) = qp2;
+      }
+
       r_theta = qp_to_r_theta(qp2, Lshells(iLat));
       bAlts(iLat, iAlt) = r_theta.first;
       bLats(iLat, iAlt) = r_theta.second;
@@ -219,8 +236,12 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
 
   report.print(3, "QP-rtheta done!");
 
+  if (isCorner){ // we don't need the rest, yet
+  report.exit(function);
+  return;
+  }
+
   arma_vec rNorm1d(nAlts), lat1dAlong(nAlts);
-  arma_cube r3d(nLons, nLats, nAlts);
   precision_t planetRadius;
 
   // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
@@ -240,19 +261,11 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
         rNorm1d(iAlt) = bAlts(iLat, iAlt);
       }
       // Lay things down in the same order as the geo grid.
-      // Use isCorner to find out where to put them.
-      if (isCorner){ 
-        // Down: baselatitudes are different, other edges dont need to be 
-        // re-calculated w this func
-        magAlt_Down.tube(iLon,  iLat) = rNorm1d * planetRadius;
-        magLat_Down.tube(iLon, iLat) = lat1dAlong;
-        }
-      else{ //centers
+      //centers only
       magAlt_scgc.tube(iLon,  iLat) = rNorm1d * planetRadius;
       magLat_scgc.tube(iLon, iLat) = lat1dAlong;
         }
     }
-  }
 
   report.exit(function);
   return;
@@ -422,7 +435,6 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
     lon1d(iLon) = lon0 + (iLon - nGCs + 0.5) * dlon;
     lon1dLeft(iLon) = lon0 + (iLon - nGCs) * dlon; // corners
   }
-
   lon1dLeft(nLons) = lon0 + (nLons - nGCs) * dlon;
 
   for (iLat = 0; iLat < nLats; iLat++) {
@@ -431,6 +443,13 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
       magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
       // left edges
       magLon_Left.subcube(0, iLat, iAlt, nLons, iLat, iAlt) = lon1dLeft;
+    }
+  }
+
+  for (iAlt = 0; iAlt < nAlts + 1; iAlt++){
+    for (iLat = 0; iLat < nLats + 1; iLat++) {
+      // Corners 
+      magLon_Corner.subcube(0, iLat, iAlt, nLons, iLat, iAlt) = lon1dLeft;
     }
   }
 
@@ -483,7 +502,17 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   geoLon_scgc = llr[0];
   geoLat_scgc = llr[1];
   geoAlt_scgc = llr[2] - planetRadius;
-  report.print(4, "Done dipole -> geographic transformations for the dipole grid.");
+  report.print(4, "Done dipole -> geographic transformations for the dipole grid centers.");
+
+  // To get cell corner locations, we need lon_left(0), lat_down(1), and alt_below(2):
+  
+
+
+  llr = mag_to_geo(magLon_Corner, magLat_Corner, magAlt_Corner, planet);
+  geoLon_Corner = llr[0];
+  geoLat_Corner = llr[1];
+  geoAlt_Corner = llr[2] - planetRadius;
+  report.print(4, "Done dipole -> geographic transformations for the dipole grid centers.");
 
   // Calculate the radius, of planet
   fill_grid_radius(planet);
