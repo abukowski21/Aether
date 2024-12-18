@@ -23,11 +23,13 @@ std::pair<precision_t, precision_t> qp_to_r_theta(precision_t q, precision_t p)
   term2 = pow(term0, 1.0 / 3.0);
   term3 = 0.5 * pow(((pow(term1, 2) + term1 * term2 + pow(term2, 2)) / term1), 3.0 / 2.0);
 
-  r = p * (4.0 * term3) / (1.0 + term3) / (1.0 + sqrt(2.0 * term3 - 1.0));
+  r = p * (4.0 * term3) / ((1.0 + term3) * (1.0 + sqrt(2.0 * term3 - 1.0)));
 
   // now that r is determined we can solve for theta
   // theta = asin(sqrt(r/p));
-  theta = asin(q * pow(r, 2.0));
+  theta = acos(q * pow(r, 2.0));
+  // Then make sure its the correct sign & direction
+  theta = cPI/2 - theta;
 
   return {r, theta};
 }
@@ -261,7 +263,7 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
       magAlt_scgc.tube(iLon,  iLat) = rNorm1d * planetRadius;
       magLat_scgc.tube(iLon, iLat) = lat1dAlong;
     }
- }
+  }
 
   report.exit(function);
   return;

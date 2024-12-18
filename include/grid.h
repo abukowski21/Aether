@@ -215,17 +215,6 @@ public:
   void calc_lat_grid_spacing();
   void calc_long_grid_spacing();
 
-  void calc_dipole_grid_spacing(Planets planet);
-  void calc_alt_dipole_grid_spacing();
-  void calc_lat_dipole_grid_spacing();
-  void calc_long_dipole_grid_spacing();
-  void fill_field_lines(arma_vec baseLats, int64_t nAlts, precision_t min_altRe,
-                        precision_t Gamma, Planets planet,
-                        bool isCorner);
-  void dipole_alt_edges();
-
-  // void calc_alt_dipole_grid_spacing();
-
   void fill_grid_radius(Planets planet);
   void calc_rad_unit(Planets planet);
   void calc_gravity(Planets planet);
@@ -247,6 +236,18 @@ public:
                               precision_t XyzGeo[3]);
 
   bool init_dipole_grid(Quadtree quadtree_ion, Planets planet);
+  // Support functions:
+  void calc_dipole_grid_spacing(Planets planet);
+  void calc_alt_dipole_grid_spacing();
+  void calc_lat_dipole_grid_spacing();
+  void calc_long_dipole_grid_spacing();
+  void fill_field_lines(arma_vec baseLats, int64_t nAlts, precision_t min_altRe,
+                        precision_t Gamma, Planets planet,
+                        bool isCorner);
+  void dipole_alt_edges(Planets planet);
+
+
+void saveCubeToCSV(arma_cube cube, std::string filename);
 
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);
