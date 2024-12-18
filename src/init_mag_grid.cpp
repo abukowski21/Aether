@@ -308,7 +308,7 @@ Planets planet){
 // They will not, however, line up from one field line to the next.
 // It's not going to be *too* hard to get the corners to line up, but it messes with the
 // orthogonality too much for me to figure out right now.
-void Grid::dipole_alt_edges(){
+void Grid::dipole_alt_edges(Planets planet){
 
   std::string function = "Grid::dipole_alt_edges";
   static int iFunction = -1;
@@ -403,10 +403,13 @@ std::cout<<"6\n";
 
   // Now we have (p,q) coords corners, convert to lon/lat/alt and we r off to the races
   std::pair <arma_cube, arma_cube> rtheta;
+  precision_t planetRadius;
   rtheta = qp_to_r_theta(magQ_Corner, magP_Corner);
-  magAlt_Below = rtheta.first;
   magLat_Below = rtheta.second;
 
+  // Change if the dipole is offset and/or planet is oblate:
+  planetRadius =  planet.get_radius(magLat_Below.at(1)); 
+  magAlt_Below = rtheta.first * planetRadius;
 
   report.exit(function);
   return;
