@@ -178,10 +178,14 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   report.print(3, "lshells calculated!");
 
   if (!isCorner){
-    for (int64_t iLat = 0; iLat < nLats; iLat ++){
-      magP_scgc.col(iLat) = magP_scgc.col(iLat) + Lshells(iLat);
+    for (int64_t iLon = 0; iLon < nLons; iLon ++){
+      for (int64_t iLat = 0; iLat < nLats; iLat ++){
+        for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
+          magP_scgc(iLon, iLat, iAlt) = Lshells(iLat);
+        }
       }
     }
+  }
   else{
     for (int64_t iLon = 0; iLon < nLons; iLon ++){
       for (int64_t iLat = 0; iLat < nLats; iLat ++){
