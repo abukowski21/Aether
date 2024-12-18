@@ -81,6 +81,18 @@ public:
   arma_cube magP_scgc;
   arma_cube magQ_scgc;
 
+  // And the corners/edges for the magnetic grid:
+  arma_cube magLon_Left;
+  arma_cube magLon_Corner;
+
+  arma_cube magLat_Down;
+  arma_cube magLat_Below;
+  arma_cube magLat_Corner;
+
+  arma_cube magAlt_Down;
+  arma_cube magAlt_Below;
+  arma_cube magAlt_Corner;
+
   // These are the locations of the magnetic poles:
   //  ll -> lat, lon, radius independent
   arma_vec mag_pole_north_ll;
@@ -200,7 +212,7 @@ public:
   void calc_lat_dipole_grid_spacing();
   void calc_long_dipole_grid_spacing();
   void fill_field_lines(arma_vec baseLats, int64_t nAlts, precision_t min_altRe,
-                        precision_t Gamma, Planets planet);
+  void dipole_alt_edges();
 
   // void calc_alt_dipole_grid_spacing();
 

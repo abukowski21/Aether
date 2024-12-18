@@ -374,6 +374,8 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   precision_t dlon = size_right_norm(0) * cPI / (nLons - 2 * nGCs);
   precision_t lon0 = lower_left_norm(0) * cPI;
   arma_vec lon1d(nLons);
+
+  arma_vec lon1dLeft(nLons + 1);
   // if we are not doing anything in the lon direction, then set dlon to
   // something reasonable:
   if (!HasXdim)
@@ -382,19 +384,26 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // Dimension iterators
   int64_t iLon, iLat, iAlt;
 
-  // Longitudes:
+  // Longitudes (symmetric, for now):
   // - Make a 1d vector
   // - copy it into the 3d cube
-  for (iLon = 0; iLon < nLons; iLon++)
+  for (iLon = 0; iLon < nLons; iLon++){
     lon1d(iLon) = lon0 + (iLon - nGCs + 0.5) * dlon;
-
-  for (iLat = 0; iLat < nLats; iLat++) {
-    for (iAlt = 0; iAlt < nAlts; iAlt++)
-      magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
-      // geoLon_Left.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
+    lon1dLeft(iLon) = lon0 + (iLon - nGCs) * dlon; // corners
   }
 
-  report.print(3, "longitudes point two");
+  lon1dLeft(nLons) = lon0 + (nLons - nGCs) * dlon;
+
+  for (iLat = 0; iLat < nLats; iLat++) {
+    for (iAlt = 0; iAlt < nAlts; iAlt++){
+      // centers:
+      magLon_scgc.subcube(0, iLat, iAlt, nLons - 1, iLat, iAlt) = lon1d;
+      // left edges
+      magLon_Left.subcube(0, iLat, iAlt, nLons, iLat, iAlt) = lon1dLeft;
+    }
+  }
+
+  report.print(3, "Done initializing longitudes, moving to latitude");
 
   // Latitudes:
 
