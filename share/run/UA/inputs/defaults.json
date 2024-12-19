@@ -87,7 +87,7 @@
         "MinApex" : 120.0,
         "LatMax":88.0,
         "LatStretch":1.0,
-        "dAltScale" : 0.6},
+        "dAltStretch" : 0.6},
 
     "Oblate" : {
 	"isOblate" : false,
