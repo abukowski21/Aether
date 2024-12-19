@@ -148,7 +148,7 @@ arma_vec baselat_spacing(precision_t extent,
 // Field line filling only needs to be redone for the "down" edges, left is the same p,q 
 // and then for "lower", we just shift the p,q after
   
-void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
+void Grid::fill_field_lines(arma_vec baseLats,
                             precision_t min_altRe, precision_t Gamma,
                             Planets planet, 
                             bool isCorner=false)
@@ -158,14 +158,14 @@ void Grid::fill_field_lines(arma_vec baseLats, int64_t nAlts,
   static int iFunction = -1;
   report.enter(function, iFunction);
 
-  int64_t nLats = baseLats.n_elem;
+  // int64_t nLats = baseLats.n_elem;
 
   precision_t q_Start, delqp;
   arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
 
   // allocate & calculate some things outside of the main loop
   // - mostly just factors to make the code easier to read
-  precision_t qp0, fb0, ft, delq, qp2, fa, fb, term0, term1, term2, term3, new_r;
+  precision_t qp0, fb0, ft, delq, qp2, fa, fb, term0, term1, term2, term3;
   // exp_q_dist is the fraction of total q-distance to step for each pt along field line
   arma_vec exp_q_dist(nAlts);
   
@@ -293,13 +293,13 @@ Planets planet){
 
   precision_t magnetic_pole_rotation = planet.get_dipole_rotation();
   precision_t magnetic_pole_tilt = planet.get_dipole_tilt();
-  std::vector<precision_t> dipole_center = planet.get_dipole_center();
 
   // Reverse our dipole rotations:
   xyzRot1 = rotate_around_y_3d(xyz_mag, magnetic_pole_tilt);
   xyzRot2 = rotate_around_z_3d(xyzRot1, magnetic_pole_rotation);
 
   // offset dipole (not yet implemented):
+  // std::vector<precision_t> dipole_center = planet.get_dipole_center();
   // xyz_geo[0] = xyzRot2[0] + dipole_center[0];
   // xyz_geo[1] = xyzRot2[1] + dipole_center[1];
   // xyz_geo[2] = xyzRot2[2] + dipole_center[2];
@@ -604,10 +604,10 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 
   // latitude & altitude of points on field lines (2D)
   // Cell centers
-  fill_field_lines(baseLats, nAlts, min_apex_re, Gamma, planet);
+  fill_field_lines(baseLats, min_apex_re, Gamma, planet);
   // Corners (final bool argument) tells function to place stuff in the corner.
   // This is only down for the "down" edges, where the base latitudes are different.
-  fill_field_lines(baseLats_down, nAlts, min_apex_re, Gamma, planet, true);
+  fill_field_lines(baseLats_down, min_apex_re, Gamma, planet, true);
   
   report.print(4, "Field-aligned Edges");
   dipole_alt_edges();
@@ -622,14 +622,10 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   geoAlt_scgc = llr[2] - planetRadius;
   report.print(4, "Done dipole -> geographic transformations for the dipole grid centers.");
 
-  // To get cell corner locations, we need lon_left(0), lat_down(1), and alt_below(2):
-  
-
-
-  llr = mag_to_geo(magLon_Corner, magLat_Corner, magAlt_Corner, planet);
-  geoLon_Corner = llr[0];
-  geoLat_Corner = llr[1];
-  geoAlt_Corner = llr[2] - planetRadius;
+  std::vector <arma_cube> llr_corner = mag_to_geo(magLon_Corner, magLat_Corner, magAlt_Corner, planet);
+  geoLon_Corner = llr_corner[0];
+  geoLat_Corner = llr_corner[1];
+  geoAlt_Corner = llr_corner[2] - planetRadius;
   report.print(4, "Done dipole -> geographic transformations for the dipole grid centers.");
 
   // Calculate the radius, of planet
