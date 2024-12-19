@@ -200,7 +200,9 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
       for (int64_t iLat = 0; iLat < nLatLoc; iLat ++){
         for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
           magP_Down(iLon, iLat, iAlt) = Lshells(iLat);
-          }}}
+        }
+      }
+    }
   }
   report.print(3, "dipole p-values stored for later.");
 
@@ -260,7 +262,7 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
 
   // rad_unit_vcgc = make_cube_vector(nLons, nLats, nAlts, 3);
   // This is wrong (same lat everywhere), but get_radius doesnt support oblate earth yet.
-  planetRadius =  planet.get_radius(bLats(0)); 
+  planetRadius =  planet.get_radius(bLats.at(0)); 
 
   for (int64_t iLat = 0; iLat < nLatLoc; iLat++)
   {
