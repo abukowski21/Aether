@@ -280,7 +280,7 @@ void Grid::fill_field_lines(arma_vec baseLats,
 ////////////////////////////////////////////
 std::vector <arma_cube> mag_to_geo(arma_cube magLon, arma_cube magLat, arma_cube magAlt,
 Planets planet){
-  std::string function = "Grid::init_dipole_grid";
+  std::string function = "Grid::mag_to_geo";
   static int iFunction = -1;
   report.enter(function, iFunction);
 
@@ -305,6 +305,8 @@ Planets planet){
 
   // transform back to lon, lat, radius:
   llr = transform_xyz_to_llr_3d(xyzRot2);
+  
+  report.exit(function);
   return llr;
 }
 
@@ -342,7 +344,6 @@ void Grid::dipole_alt_edges(Planets planet){
       magP_Corner(iLon, iLat, nAlts) = magP_Corner(iLon, iLat, nAlts - 1);
     }
   }
-std::cout<<"2\n";
   
   // next, take the final p-value (in lat) to be one more step in p.
   // Will not be the same size as prev. cells, but that's (hopefully) ok
@@ -354,16 +355,14 @@ std::cout<<"2\n";
                                          + magP_Corner(iLon, nLats - 1, iAlt);
     }
   }
-std::cout<<"3\n";
 
-  // // And final step, use the longitude symmetry.
-  // // It's fine, until the dipole is offset. then the entire fill_field_lines needs to be redone.
+  // And final step, use the longitude symmetry.
+  // It's fine, until the dipole is offset. then the entire fill_field_lines needs to be redone.
   for (int64_t iAlt = 0; iAlt < nAlts-1; iAlt++) {
     for (int64_t iLat = 0; iLat < nLats-1; iLat++) {
       magP_Corner(nLons, iLat, iAlt) = magP_Corner(nLons-1, iLat, iAlt);
     }
   }
-std::cout<<"4\n";
 
   // For q-coord we'll avg q above and below the point...
   // May need to change the dipole spacing func's to get this working exactly though.
@@ -379,7 +378,6 @@ std::cout<<"4\n";
         }
       }
     }
-std::cout<<"5\n";
 
   // for last (alt) corner, take the same step as the prev corner to the highest center.
   // this will force the highest corner to be above the last center
@@ -405,8 +403,6 @@ std::cout<<"5\n";
     }
   }
 
-std::cout<<"6\n";
-
   // Now we have (p,q) coords corners, convert to lon/lat/alt and we r off to the races
   std::pair <arma_cube, arma_cube> rtheta;
   precision_t planetRadius;
@@ -429,7 +425,7 @@ std::cout<<"6\n";
 
 void Grid::convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3], precision_t XyzGeo[3]) {
   
-  std::string function = "Grid::init_dipole_grid";
+  std::string function = "Grid::convert_dipole_geo_xyz";
   static int iFunction = -1;
   report.enter(function, iFunction);
 
@@ -466,6 +462,10 @@ void Grid::convert_dipole_geo_xyz(Planets planet, precision_t XyzDipole[3], prec
 
   // Remove Shift
   vector_add(XyzRemoveRot, dipole_center, XyzGeo);  
+
+  report.exit(function);
+  return;
+
 }
 
 // ----------------------------------------------------------------------
@@ -573,7 +573,9 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
 
   report.print(3, "Done initializing longitudes, moving to latitude");
 
-  // Latitudes:
+  ////////////////
+  // Latitudes: //
+  ////////////////
 
   // min_lat calculated from min_apex
   precision_t min_lat = acos(sqrt(1 / min_apex_re));
