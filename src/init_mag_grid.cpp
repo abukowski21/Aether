@@ -105,7 +105,7 @@ arma_vec baselat_spacing(precision_t extent,
   // NOTE: spacing factor != 1 will not work yet. but framework is here...
   bb = (lat_high - lat_low) / (pow(lat_high, spacing_factor) - pow(lat_low, spacing_factor));
   aa = lat_high - bb * pow(lat_high, spacing_factor);
-  dlat = (lat_high - lat_low) / (nLats_here);
+  dlat = (lat_high - lat_low) / (nLats_here+1);
   report.print(4, "baselats laydown!");
 
   for (int64_t j = 0; j < nLats_here; j++)
@@ -222,19 +222,19 @@ void Grid::fill_field_lines(arma_vec baseLats,
       // Q value at this point:
       qp2 = q_Start + ft * delq;
 
-      if (!isCorner){
-        for (int64_t iLon=0; iLon < nLons; iLon ++) 
-          magQ_scgc(iLon, iLat, iAlt) = qp2;
-        }
-      else {
+      if (isCorner){
         // save the q for the "down" case:
         for (int64_t iLon=0; iLon < nLons; iLon ++) 
           magQ_Down(iLon, iLat, iAlt) = qp2;
-      }
-
-      r_theta = qp_to_r_theta(qp2, Lshells(iLat));
-      bAlts(iLat, iAlt) = r_theta.first;
-      bLats(iLat, iAlt) = r_theta.second;
+        }
+      else {
+        for (int64_t iLon=0; iLon < nLons; iLon ++){
+          magQ_scgc(iLon, iLat, iAlt) = qp2;
+        }
+        r_theta = qp_to_r_theta(qp2, Lshells(iLat));
+        bAlts(iLat, iAlt) = r_theta.first;
+        bLats(iLat, iAlt) = r_theta.second;
+        }
     }
   }
 
@@ -411,11 +411,11 @@ std::cout<<"6\n";
   std::pair <arma_cube, arma_cube> rtheta;
   precision_t planetRadius;
   rtheta = qp_to_r_theta(magQ_Corner, magP_Corner);
-  magLat_Below = rtheta.second;
+  magLat_Corner = rtheta.second;
 
   // Change if the dipole is offset and/or planet is oblate:
-  planetRadius =  planet.get_radius(magLat_Below.at(1)); 
-  magAlt_Below = rtheta.first * planetRadius;
+  planetRadius =  planet.get_radius(magLat_scgc.at(1)); 
+  magAlt_Corner = rtheta.first * planetRadius;
 
   report.exit(function);
   return;
@@ -596,7 +596,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
     }
   // Put in 1st and last cell. Done this way so it's easier to put in supercell or something else
   baseLats_down(0) = baseLats(0) - dlat * 0.5;
-  baseLats_down(0) = baseLats(nLats-1) + dlat * 0.5;
+  // baseLats_down(0) = baseLats(nLats-1) + dlat * 0.5;
   
 
   report.print(3, "baselats done!");
@@ -609,7 +609,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   fill_field_lines(baseLats_down, min_apex_re, Gamma, planet, true);
   
   report.print(4, "Field-aligned Edges");
-  dipole_alt_edges();
+  dipole_alt_edges(planet);
   
   report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
 
