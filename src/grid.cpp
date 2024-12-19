@@ -23,7 +23,7 @@ Grid::Grid(std::string gridtype) {
   nZ = grid_input.nZ + nGCs * 2;
   nAlts = nZ;
 
-  // No set all of the logicals to make the flow a bit easier:
+  // Now set all of the logicals to make the flow a bit easier:
 
   if (grid_input.nX == 1 &
       grid_input.nY == 1 &
