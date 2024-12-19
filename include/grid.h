@@ -93,6 +93,9 @@ public:
   arma_cube magAlt_Below;
   arma_cube magAlt_Corner;
 
+  //For easier interpolation:
+  arma_vec baseLats_down;
+
   // these need to be stored in (p,q) coords for a bit, its messy:
   arma_cube magP_Down;
   arma_cube magP_Below;
@@ -245,6 +248,19 @@ public:
                         precision_t Gamma, Planets planet,
                         bool isCorner);
   void dipole_alt_edges(Planets planet);
+  // get the latitude spacing given the quadtree start & size, and the latitude limits
+  // extent: quadtree up
+  // origin: quadtree origin
+  // upper_lim: upper latitude limit (input)
+  // lower_lim: lower latitude limit (from min_apex)
+  // nLats: number of latitudes (nY)
+  // spacing_factor: (not supported yet), so always 1.0. Will adjust baselat spacing, eventually.
+  arma_vec baselat_spacing(precision_t extent,
+                          precision_t origin,
+                          precision_t upper_lim,
+                          precision_t lower_lim,
+                          // int16_t nLats,
+                          precision_t spacing_factor);
 
 
 void saveCubeToCSV(arma_cube cube, std::string filename);

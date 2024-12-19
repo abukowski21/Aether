@@ -54,13 +54,11 @@ std::pair<arma_cube, arma_cube> qp_to_r_theta(arma_cube q, arma_cube p)
   return {r, theta};
 }
 
-arma_vec baselat_spacing(precision_t extent,
+arma_vec Grid::baselat_spacing(precision_t extent,
                          precision_t origin,
                          precision_t upper_lim,
                          precision_t lower_lim,
-                         int16_t nLats,
-                         precision_t spacing_factor)
-{
+                         precision_t spacing_factor){
   std::string function = "Grid::baselat_spacing";
   static int iFunction = -1;
   report.enter(function, iFunction);
@@ -147,17 +145,14 @@ arma_vec baselat_spacing(precision_t extent,
 // Field line filling only needs to be redone for the "down" edges, left is the same p,q 
 // and then for "lower", we just shift the p,q after
   
-void Grid::fill_field_lines(arma_vec baseLats,
+void Grid::fill_field_lines(arma_vec baseLatsLoc,
                             precision_t min_altRe, precision_t Gamma,
                             Planets planet, 
-                            bool isCorner=false)
-{
+                            bool isCorner=false){
 
   std::string function = "Grid::fill_field_lines";
   static int iFunction = -1;
   report.enter(function, iFunction);
-
-  // int64_t nLats = baseLats.n_elem;
 
   precision_t q_Start, delqp;
   arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
@@ -175,7 +170,7 @@ void Grid::fill_field_lines(arma_vec baseLats,
   // using L=R/sin2(theta), where theta is from north pole
   arma_vec Lshells(nLats);
   for (int64_t iLat = 0; iLat < nLats; iLat++)
-    Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLats(iLat)), 2.0);
+    Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLatsLoc(iLat)), 2.0);
   
   report.print(3, "lshells calculated!");
 
@@ -203,7 +198,7 @@ void Grid::fill_field_lines(arma_vec baseLats,
 
   for (int iLat = 0; iLat < nLats; iLat++)
   {
-    q_Start = -cos(cPI / 2 + baseLats(iLat)) / pow(min_altRe, 2.0);
+    q_Start = -cos(cPI / 2 + baseLatsLoc(iLat)) / pow(min_altRe, 2.0);
 
     // calculate const stride in dipole coords, same as sami2/3 (huba & joyce 2000) 
     // Note this is not the:
@@ -583,7 +578,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // latitude of field line base:
   // todo: needs support for variable stretching. it's like, halfway there.
   arma_vec baseLats = baselat_spacing(size_up_norm[1], lower_left_norm[1],
-                                      max_lat, min_lat, nLats, 1.0);
+                                      max_lat, min_lat, 1.0);
 
   // downward sides (latitude shifted by 1/2 step):
   // TODO: This only works for linear latitude spacing, which is all that's supported right now.
