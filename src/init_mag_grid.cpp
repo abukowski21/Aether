@@ -106,6 +106,15 @@ arma_vec Grid::baselat_spacing(precision_t extent,
   dlat = (lat_high - lat_low) / (nLats_here+1);
   report.print(4, "baselats laydown!");
 
+  // edge case for 1-D
+  // In 1-D, the base latitudes will be 1/2 way between LatMax & minApex,
+  // dlat is adjustable if it doesn't suit your needs.
+  if (!HasYdim){
+    DO_FLIPBACK=false;
+    dlat=1.0 * cDtoR;
+    nLats_here = nLats + 1;
+  }
+
   for (int64_t j = 0; j < nLats_here; j++)
   {
     ang0 = lat_low + (j + 1) * dlat;
@@ -167,6 +176,7 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
   
   // temp holding of results from q,p -> r,theta conversion:
   std:: pair<precision_t, precision_t> r_theta;
+  report.print(3, " calculating lshells!");
 
   // Find L-Shell for each baseLat
   // using L=R/sin2(theta), where theta is from north pole
@@ -316,7 +326,7 @@ Planets planet){
 // They will not, however, line up from one field line to the next.
 // It's not going to be *too* hard to get the corners to line up, but it messes with the
 // orthogonality too much for me to figure out right now.
-void Grid::dipole_alt_edges(Planets planet){
+void Grid::dipole_alt_edges(Planets planet, precision_t min_altRe){
 
   std::string function = "Grid::dipole_alt_edges";
   static int iFunction = -1;
@@ -327,7 +337,7 @@ void Grid::dipole_alt_edges(Planets planet){
   precision_t pTmp;
   
   for (int64_t iLon = 0; iLon < nLons; iLon++) {
-    for (int64_t iLat = 0; iLat < nLats; iLat++) {
+    for (int64_t iLat = 0; iLat < nLats + 1; iLat++) {
       pTmp = magP_Down(iLon, iLat, 0);
       for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
         magP_Corner(iLon, iLat, iAlt) = pTmp;
@@ -344,38 +354,28 @@ void Grid::dipole_alt_edges(Planets planet){
       magP_Corner(iLon, iLat, nAlts) = magP_Corner(iLon, iLat, nAlts - 1);
     }
   }
-  
-  // next, take the final p-value (in lat) to be one more step in p.
-  // Will not be the same size as prev. cells, but that's (hopefully) ok
-  // And at high latitudes, that cell is going to be super awkward.
-  // This is what needs changing when it's supercell time #todo
-  for (int64_t iLon = 0; iLon < nLons + 1; iLon++) {
-    for (int64_t iAlt = 0; iAlt < nAlts + 1; iAlt++) {
-      magP_Corner(iLon, nLats, iAlt) = (magP_Corner(iLon, nLats - 2, iAlt) - magP_Corner(nLons, nLats - 1, iAlt)) / 2
-                                         + magP_Corner(iLon, nLats - 1, iAlt);
-    }
-  }
 
   // And final step, use the longitude symmetry.
   // It's fine, until the dipole is offset. then the entire fill_field_lines needs to be redone.
-  for (int64_t iAlt = 0; iAlt < nAlts-1; iAlt++) {
-    for (int64_t iLat = 0; iLat < nLats-1; iLat++) {
+  for (int64_t iAlt = 0; iAlt < nAlts+1; iAlt++) {
+    for (int64_t iLat = 0; iLat < nLats+1; iLat++) {
       magP_Corner(nLons, iLat, iAlt) = magP_Corner(nLons-1, iLat, iAlt);
     }
   }
 
-  // For q-coord we'll avg q above and below the point...
+  // For q-coord we'll avg q_down (from different baseLat) above and below the point...
   // May need to change the dipole spacing func's to get this working exactly though.
-  // With how the field line pts are currently put in, there would be one edge at the equator (r=inf)
-  // so for the last point we'll take a step in q equal to the final center + the q-dist from the 
-  // previous corner, to ensure the final center is within the final 2 corners.
+  // With how the field line pts are currently put in, this ends up being quite a hassle.
+  // Not to mention, there would be a corner at q=0 (so r=A_LOT).
+  // Top and bottom-most corners take the same q-step as the previous cell.
   precision_t qTmp;
 
   for (int64_t iLon = 0; iLon < nLons; iLon++) {
-    for (int64_t iLat = 0; iLat < nLats; iLat++) {
-      for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
-        magQ_Corner(iLon, iLat, iAlt) = magQ_Down(iLon, iLat, iAlt);
+    for (int64_t iLat = 0; iLat < nLats+1; iLat++) {
+      for (int64_t iAlt = 1; iAlt < nAlts; iAlt ++){
+        magQ_Corner(iLon, iLat, iAlt) = (magQ_Down(iLon, iLat, iAlt-1) + magQ_Down(iLon, iLat, iAlt))/2;
         }
+      magQ_Corner(iLon, iLat, 0) = (2*magQ_Corner(iLon, iLat, 1) - magQ_Corner(iLon, iLat, 2));
       }
     }
 
@@ -383,7 +383,7 @@ void Grid::dipole_alt_edges(Planets planet){
   // this will force the highest corner to be above the last center
   for (int64_t iLon = 0; iLon < nLons; iLon++) {
     for (int64_t iLat = 0; iLat < nLats; iLat++) {
-      qTmp = 2*magQ_scgc(iLon, iLat, nAlts - 1) - magQ_Corner(iLon, iLat, nAlts - 1);
+      qTmp = 2*magQ_Corner(iLon, iLat, nAlts - 1) - magQ_Corner(iLon, iLat, nAlts - 2);
       magQ_Corner(iLon, iLat, nAlts) = qTmp;
     }
   }
@@ -392,14 +392,6 @@ void Grid::dipole_alt_edges(Planets planet){
   for (int64_t iAlt = 0; iAlt < nAlts + 1; iAlt ++) {
     for (int64_t iLat = 0; iLat < nLats + 1; iLat++) {
       magQ_Corner(nLons, iLat, iAlt) = magQ_Corner(nLons - 1, iLat, iAlt);
-    }
-  }
-  // last lat corner is tricky. just take another latitude step, I guess. 
-  // Will work for now.
-  for (int64_t iAlt = 0; iAlt < nAlts + 1; iAlt ++) {
-    for (int64_t iLon = 0; iLon < nLons + 1; iLon++) {
-      magQ_Corner(iLon, nLats, iAlt) = (magQ_Corner(iLon, nLats - 2, iAlt) - magQ_Corner(nLons-1, nLats - 1, iAlt)) / 2
-                                         + magQ_Corner(iLon, nLats - 1, iAlt);
     }
   }
 
@@ -590,7 +582,6 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   // When the exponential spacing (or something else) is fixed, this needs updating.
   precision_t dlat;
   dlat = baseLats(1) - baseLats(0);
-  arma_vec baseLats_down(nLats + 1);
 
   // put one cell halfway btwn each base latitude, leave 1st and last cell for now...
   for (int64_t iLat = 1; iLat < nLats; iLat ++){
@@ -598,8 +589,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
     }
   // Put in 1st and last cell. Done this way so it's easier to put in supercell or something else
   baseLats_down(0) = baseLats(0) - dlat * 0.5;
-  // baseLats_down(0) = baseLats(nLats-1) + dlat * 0.5;
-  
+  baseLats_down(nLats) = baseLats(nLats-1) + dlat * 0.5;
 
   report.print(3, "baselats done!");
 
@@ -611,7 +601,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet)
   fill_field_lines(baseLats_down, min_apex_re, Gamma, planet, true);
   
   report.print(4, "Field-aligned Edges");
-  dipole_alt_edges(planet);
+  dipole_alt_edges(planet, min_alt_re);
   
   report.print(3, "Done generating symmetric latitude & altitude spacing in dipole.");
 

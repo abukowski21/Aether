@@ -247,7 +247,7 @@ public:
   void fill_field_lines(arma_vec baseLats, precision_t min_altRe,
                         precision_t Gamma, Planets planet,
                         bool isCorner);
-  void dipole_alt_edges(Planets planet);
+  void dipole_alt_edges(Planets planet, precision_t min_altRe);
   // get the latitude spacing given the quadtree start & size, and the latitude limits
   // extent: quadtree up
   // origin: quadtree origin

@@ -162,6 +162,8 @@ Grid::Grid(std::string gridtype) {
   magP_Corner.set_size(nX + 1, nY + 1, nZ + 1);
   magQ_Corner.set_size(nX + 1, nY + 1, nZ + 1);
 
+  baseLats_down.set_size(nY + 1);
+
   radius_scgc.set_size(nX, nY, nZ);
   radius2_scgc.set_size(nX, nY, nZ);
   radius2i_scgc.set_size(nX, nY, nZ);
