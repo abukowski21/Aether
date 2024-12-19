@@ -155,28 +155,30 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
   report.enter(function, iFunction);
 
   precision_t q_Start, delqp;
-  arma_mat bAlts(nLats, nAlts), bLats(nLats, nAlts);
 
   // allocate & calculate some things outside of the main loop
   // - mostly just factors to make the code easier to read
   precision_t qp0, fb0, ft, delq, qp2, fa, fb, term0, term1, term2, term3;
   // exp_q_dist is the fraction of total q-distance to step for each pt along field line
   arma_vec exp_q_dist(nAlts);
+
+  // corners/edges have one more lat dimension...
+  int64_t nLatLoc = baseLatsLoc.n_elem;
   
   // temp holding of results from q,p -> r,theta conversion:
   std:: pair<precision_t, precision_t> r_theta;
 
   // Find L-Shell for each baseLat
   // using L=R/sin2(theta), where theta is from north pole
-  arma_vec Lshells(nLats);
-  for (int64_t iLat = 0; iLat < nLats; iLat++)
+  arma_vec Lshells(nLatLoc);
+  for (int64_t iLat = 0; iLat < nLatLoc; iLat++)
     Lshells(iLat) = (min_altRe) / pow(sin(cPI / 2 - baseLatsLoc(iLat)), 2.0);
   
   report.print(3, "lshells calculated!");
 
   if (!isCorner){
     for (int64_t iLon = 0; iLon < nLons; iLon ++){
-      for (int64_t iLat = 0; iLat < nLats; iLat ++){
+      for (int64_t iLat = 0; iLat < nLatLoc; iLat ++){
         for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
           magP_scgc(iLon, iLat, iAlt) = Lshells(iLat);
         }
@@ -185,7 +187,7 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
   }
   else{
     for (int64_t iLon = 0; iLon < nLons; iLon ++){
-      for (int64_t iLat = 0; iLat < nLats; iLat ++){
+      for (int64_t iLat = 0; iLat < nLatLoc; iLat ++){
         for (int64_t iAlt = 0; iAlt < nAlts; iAlt ++){
           magP_Down(iLon, iLat, iAlt) = Lshells(iLat);
           }}}
@@ -196,7 +198,10 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
     exp_q_dist(iAlt) = Gamma + (1 - Gamma) * exp(-pow(((iAlt - nAlts) / (nAlts / 5.0)), 2.0));
   report.print(3, "expQ");
 
-  for (int iLat = 0; iLat < nLats; iLat++)
+  // mag alts and lats:
+  arma_mat bAlts(nLatLoc, nAlts), bLats(nLatLoc, nAlts);
+
+  for (int iLat = 0; iLat < nLatLoc; iLat++)
   {
     q_Start = -cos(cPI / 2 + baseLatsLoc(iLat)) / pow(min_altRe, 2.0);
 
@@ -247,7 +252,7 @@ void Grid::fill_field_lines(arma_vec baseLatsLoc,
   // This is wrong (same lat everywhere), but get_radius doesnt support oblate earth yet.
   planetRadius =  planet.get_radius(bLats(0)); 
 
-  for (int64_t iLat = 0; iLat < nLats; iLat++)
+  for (int64_t iLat = 0; iLat < nLatLoc; iLat++)
   {
     for (int64_t iLon = 0; iLon < nLons; iLon++)
     {
