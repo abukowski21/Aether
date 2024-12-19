@@ -262,9 +262,6 @@ public:
                           // int16_t nLats,
                           precision_t spacing_factor);
 
-
-void saveCubeToCSV(arma_cube cube, std::string filename);
-
   // Update ghost cells with values from other processors
   void exchange(arma_cube &data, const bool pole_inverse);
 
