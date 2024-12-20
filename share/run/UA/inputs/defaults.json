@@ -22,11 +22,13 @@
 
     "Advection" : {
 	"Neutrals" : {
-	"Vertical" : "rusanov",
-	"Horizontal" : "default"},
+	    "Vertical" : "rusanov",
+	    "Horizontal" : "default",
+	    "useBulkWinds" : true,
+	    "useImplicitFriction" : true},
 	"Ions" : {
-	"Along" : "rusanov",
-	"Across" : "default"} },
+	    "Along" : "rusanov",
+	    "Across" : "default"} },
     
     "Student" : {
 	"name" : "",
@@ -98,7 +100,8 @@
 
     "Sources" : {
 	"Grid" : {
-	    "Cent_acc" : true },
+	    "Centripetal" : true,
+		"Coriolis" : true },
 	"Neutrals" : {
 	    "NO_cool" : false,
 	    "O_cool": false } },
@@ -112,7 +115,7 @@
     "AuroraFile" : "UA/inputs/aurora_earth.csv",
     "IndicesLookupFile" : "UA/inputs/indices_lookup.json",
 
-    "OnmiwebFile" : [""],
+    "OmniwebFile" : ["UA/inputs/omni_20110319.txt"],
     
     "Logfile" : {
 	"name" : ["UA/output/log_geo.txt", "UA/output/log_mag.txt"],

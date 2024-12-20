@@ -652,7 +652,8 @@ void Grid::create_sphere_grid(Quadtree quadtree) {
 
   // if we are not doing anything in the lon direction, then set dlon to
   // something reasonable:
-  if (!HasXdim) dlon = 1.0 * cDtoR;
+  if (!HasXdim)
+    dlon = 1.0 * cDtoR;
 
   // Longitudes:
   // - Make a 1d vector
@@ -671,7 +672,8 @@ void Grid::create_sphere_grid(Quadtree quadtree) {
 
   // if we are not doing anything in the lat direction, then set dlat to
   // something reasonable:
-  if (!HasYdim) dlat = 1.0 * cDtoR;
+  if (!HasYdim)
+    dlat = 1.0 * cDtoR;
 
   // Latitudes:
   // - Make a 1d vector
@@ -683,6 +685,13 @@ void Grid::create_sphere_grid(Quadtree quadtree) {
     for (iAlt = 0; iAlt < nAlts; iAlt++)
       geoLat_scgc.subcube(iLon, 0, iAlt, iLon, nLats - 1, iAlt) = lat1d;
   }
+
+  arma_cube cos_lat = cos(geoLat_scgc);
+  cos_lat.elem( find(cos_lat < 0.00001) ).fill(0.00001);
+
+  y_Center = geoLat_scgc;
+  x_Center = geoLon_scgc % cos_lat;
+  cell_area = dlat * dlon * cos_lat;
 
   // ---------------------------------------------
   // Left Sides - edges on left side (no offset left)
@@ -702,6 +711,13 @@ void Grid::create_sphere_grid(Quadtree quadtree) {
     geoLat_Left.slice(iAlt) = lat2d_left;
   }
 
+  arma_cube cos_lat_L = cos(geoLat_Left);
+  cos_lat_L.elem( find(cos_lat_L < 0.00001) ).fill(0.00001);
+
+  x_Left = geoLon_Left % cos_lat_L;
+  dy_Left.set_size(nLons, nLats, nAlts);
+  dy_Left.fill(dlat);
+
   // ---------------------------------------------
   // Down Sides - edges on down side (no offset lat)
   // ---------------------------------------------
@@ -719,6 +735,12 @@ void Grid::create_sphere_grid(Quadtree quadtree) {
     geoLon_Down.slice(iAlt) = lon2d_down;
     geoLat_Down.slice(iAlt) = lat2d_down;
   }
+
+  arma_cube cos_lat_D = cos(geoLat_Down);
+  cos_lat_D.elem( find(cos_lat_D < 0.00001) ).fill(0.00001);
+
+  y_Down = geoLat_Down;
+  dx_Down = dlon * cos_lat_D;
 
   // ---------------------------------------------
   // Corner Sides - corner (no offset lat or lon)
@@ -761,7 +783,8 @@ void Grid::create_altitudes(Planets planet) {
   if (grid_input.IsUniformAlt) {
     for (iAlt = 0; iAlt < nAlts; iAlt++)
       // Convert km to m:
-      alt1d(iAlt) = (grid_input.alt_min + (iAlt - nGeoGhosts) * grid_input.daltKm) * cKMtoM;
+      alt1d(iAlt) = (grid_input.alt_min + (iAlt - nGeoGhosts) * grid_input.daltKm) *
+                    cKMtoM;
   } else {
 
     json neutrals = planet.get_neutrals();
@@ -955,11 +978,17 @@ bool Grid::init_geo_grid(Quadtree quadtree,
 
   if (iGridShape_ == iCubesphere_) {
     report.print(0, "Creating Cubesphere Grid");
-    if (!Is0D & !Is1Dz) create_cubesphere_connection(quadtree);
+
+    if (!Is0D & !Is1Dz)
+      create_cubesphere_connection(quadtree);
+
     IsCubeSphereGrid = true;
   } else {
     report.print(0, "Creating Spherical Grid");
-    if (!Is0D & !Is1Dz) create_sphere_connection(quadtree);
+
+    if (!Is0D & !Is1Dz)
+      create_sphere_connection(quadtree);
+
     IsCubeSphereGrid = false;
   }
 
@@ -985,6 +1014,7 @@ bool Grid::init_geo_grid(Quadtree quadtree,
 
   // Calculate the radius (for spherical or non-spherical)
   fill_grid_radius(planet);
+
   // Correct the reference grid with correct length scale:
   // (with R = actual radius)
   if (iGridShape_ == iCubesphere_)

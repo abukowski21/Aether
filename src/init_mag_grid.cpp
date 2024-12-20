@@ -11,8 +11,10 @@
 //  https://arxiv.org/pdf/physics/0606044
 //
 // ----------------------------------------------------------------------
+
 std::pair<precision_t, precision_t> qp_to_r_theta(precision_t q,
                                                   precision_t p) {
+
   // return quanties
   precision_t r, theta;
   // Intermediate quantities:
@@ -472,6 +474,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
   bool DidWork = true;
 
 
+
   string function = "Grid::init_dipole_grid";
   static int iFunction = -1;
   report.enter(function, iFunction);
@@ -533,6 +536,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
   precision_t lon0 = lower_left_norm(0) * cPI;
   arma_vec lon1d(nLons);
 
+
   arma_vec lon1dLeft(nLons + 1);
 
   // if we are not doing anything in the lon direction, then set dlon to
@@ -551,6 +555,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
     lon1dLeft(iLon) = lon0 + (iLon - nGCs) * dlon; // corners
   }
 
+
   lon1dLeft(nLons) = lon0 + (nLons - nGCs) * dlon;
 
   for (iLat = 0; iLat < nLats; iLat++) {
@@ -561,6 +566,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
       magLon_Left.subcube(0, iLat, iAlt, nLons, iLat, iAlt) = lon1dLeft;
     }
   }
+
 
   for (iAlt = 0; iAlt < nAlts + 1; iAlt++) {
     for (iLat = 0; iLat < nLats + 1; iLat++) {
@@ -611,6 +617,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
 
   report.print(3,
                "Done generating symmetric latitude & altitude spacing in dipole.");
+
 
 
   std::vector <arma_cube> llr = mag_to_geo(magLon_scgc, magLat_scgc, magAlt_scgc,
@@ -665,6 +672,7 @@ bool Grid::init_dipole_grid(Quadtree quadtree_ion, Planets planet) {
   report.print(4, "Done gravity calculations for the dipole grid.");
 
   calc_dipole_grid_spacing(planet);
+
   report.print(4, "Done altitude spacing for the dipole grid.");
 
   // Calculate magnetic field and magnetic coordinates:

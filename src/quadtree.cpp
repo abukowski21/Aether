@@ -2,7 +2,7 @@
 // Full license can be found in License.md
 
 // Need to allow more types of grids.  We have two axes of grids, really:
-//   - Neutral 
+//   - Neutral
 //   - Ion
 // Within each of those, we can have several types of grids:
 //   - Cubesphere, this has 6 root nodes (2 polar, 4 equatorial)
@@ -49,13 +49,15 @@ void Quadtree::build(std::string gridtype) {
     rights = CubeSphere::RIGHTS;
     ups = CubeSphere::UPS;
     IsCubeSphere = true;
-  } 
+  }
+
   if (grid_input.shape == "sphere") {
     origins = Sphere::ORIGINS;
     rights = Sphere::RIGHTS;
     ups = Sphere::UPS;
     IsSphere = true;
   }
+
   if (grid_input.shape == "dipole") {
     origins = Dipole::ORIGINS;
     rights = Dipole::RIGHTS;

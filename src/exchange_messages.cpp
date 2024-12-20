@@ -725,6 +725,13 @@ bool Neutrals::exchange_really_old(Grid &grid) {
       set_horizontal_bcs(iDir, grid);
   }
 
+  for (int i = 0; i < nSpecies; ++i)
+    fill_corners(species[i].density_scgc, nG);
+
+  fill_corners(temperature_scgc, nG);
+  for (int iDir = 0; iDir < 3; iDir++)
+    fill_corners(velocity_vcgc[iDir], nG);
+
   // Wait for all processors to be done.
   MPI_Barrier(aether_comm);
 
@@ -898,7 +905,8 @@ bool exchange_one_var(Grid &grid,
 
   // This function is only needed if we do interpolation, which only happens in
   // the horizontal directions
-  if (!grid.get_HasXdim() & !grid.get_HasYdim()) return true;
+  if (!grid.get_HasXdim() & !grid.get_HasYdim())
+    return true;
 
   std::string function = "exchange_one_var";
   static int iFunction = -1;
@@ -1198,7 +1206,8 @@ bool find_ghostcell_interpolation_coefs(Grid &grid) {
 
   // This function is only needed if we do interpolation, which only happens in
   // the horizontal directions
-  if (!grid.get_HasXdim() & !grid.get_HasYdim()) return true;
+  if (!grid.get_HasXdim() & !grid.get_HasYdim())
+    return true;
 
   std::string function = "find_ghostcell_interpolation_coefs";
   static int iFunction = -1;
